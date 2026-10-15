@@ -1,8 +1,14 @@
 # Release and winget
 
-> Status: Current · Decision: [ADR-0004](../adr/0004-open-source-and-releases.md) · Tool: `tools/release` (`pnpm release …`, details in [its notes](../../tools/release/CLAUDE.md)). For maintainers: publishing, pushing a `v*` tag and submitting to winget are done by hand, never by CI.
+> Status: Current · Decision: [ADR-0004](../adr/0004-open-source-and-releases.md) · Tool: `tools/release` (`pnpm release …`, details in [its notes](../../tools/release/CLAUDE.md)). For maintainers: pushing a `v*` tag, publishing a release and submitting to winget are done by hand.
 
 WolfCmd ships as a per-user NSIS installer attached to the GitHub releases of this repository, `wolfknight949/wolfcmd` (installer, `SHA256SUMS` and notes). Users install and update with winget; the app has no updater. User data (`%APPDATA%\WolfCmd`) survives every update.
+
+## Signed builds (GitHub Actions)
+- Released installers are built by GitHub Actions from the public source ([`.github/workflows/release.yml`](../../.github/workflows/release.yml)), so code signing can prove where they came from ([code signing policy](../../CODE_SIGNING_POLICY.md)).
+- **A version tag** (`git push origin vX.Y.Z`, after `pnpm release build X.Y.Z` committed the version and changelog and the commit is pushed) builds that commit, checks the tag matches the app's version, runs `pnpm check`, builds the installer, has SignPath sign it (once the `SIGNPATH_API_TOKEN` secret and the `SIGNPATH_ORGANIZATION_ID` variable are set; each request is approved in SignPath) and **drafts** the GitHub release with the installer and `SHA256SUMS` (notes from `CHANGELOG.md`). A maintainer checks the draft and publishes it, then writes and submits the winget manifests with the SHA-256 from `SHA256SUMS`.
+- **Run workflow** (by hand) builds any branch and keeps the installer as an artifact, without releasing anything.
+- The local steps below (`pnpm release try`, `publish`) stay for trying a build on this PC and for releasing without CI.
 
 ## Once
 1. **GitHub CLI:** `gh auth login` with `repo` scope. Check: `gh repo view wolfknight949/wolfcmd`.

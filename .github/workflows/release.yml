@@ -1,0 +1,133 @@
+# Builds the Windows installer from this repository's source on GitHub's runners.
+#
+# - A pushed version tag (`v0.7.1-beta.1`) builds that commit, checks the tag matches the app's
+#   version, and drafts a GitHub release with the installer and SHA256SUMS. A maintainer reviews
+#   the draft and publishes it (docs/process/release.md).
+# - "Run workflow" (workflow_dispatch) builds any branch and keeps the installer as an artifact
+#   only: nothing is released.
+#
+# Code signing (CODE_SIGNING_POLICY.md) is done by SignPath from the artifact this workflow
+# uploads, so a signed installer always comes from a build of the public source. The signing
+# step runs once the repository has the `SIGNPATH_API_TOKEN` secret.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the Windows installer
+    runs-on: windows-latest
+    permissions:
+      contents: write # draft the release (tags only)
+      actions: read # SignPath reads the uploaded artifact
+    env:
+      SIGNPATH_CONFIGURED: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm (version from package.json)
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up Rust (version from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check (format, lint, typecheck, dead code, tests)
+        run: pnpm check
+
+      - name: Build the installer
+        run: pnpm build
+
+      - name: Collect the installer and its checksum
+        id: collect
+        shell: pwsh
+        run: |
+          $version = (Get-Content crates/wcmd-app/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_TYPE -eq "tag" -and "v$version" -ne $env:GITHUB_REF_NAME) {
+            throw "The tag $env:GITHUB_REF_NAME doesn't match the app's version $version"
+          }
+          $installer = "WolfCmd_${version}_x64-setup.exe"
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item "target/release/bundle/nsis/$installer" "out/$installer"
+          $hash = (Get-FileHash "out/$installer" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $installer" | Set-Content -NoNewline -Encoding ascii out/SHA256SUMS
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "installer=$installer" >> $env:GITHUB_OUTPUT
+          Write-Host "Built $installer ($hash)"
+
+      - name: Keep the unsigned installer
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-unsigned
+          path: out/${{ steps.collect.outputs.installer }}
+          if-no-files-found: error
+
+      # SignPath signs the uploaded artifact and returns the signed installer (CODE_SIGNING_POLICY.md).
+      # Every request needs a maintainer's approval in SignPath before it is signed.
+      - name: Sign with SignPath
+        if: env.SIGNPATH_CONFIGURED == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: wolfcmd
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Use the signed installer and recompute the checksum
+        if: env.SIGNPATH_CONFIGURED == 'true'
+        shell: pwsh
+        run: |
+          $installer = "${{ steps.collect.outputs.installer }}"
+          Copy-Item "signed/$installer" "out/$installer" -Force
+          $hash = (Get-FileHash "out/$installer" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $installer" | Set-Content -NoNewline -Encoding ascii out/SHA256SUMS
+
+      - name: Keep the release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.collect.outputs.version }}
+          path: out/*
+          if-no-files-found: error
+
+      - name: Draft the GitHub release (tags only)
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = "${{ steps.collect.outputs.version }}"
+          # The changelog section of this version is the release notes.
+          $changelog = Get-Content CHANGELOG.md -Raw
+          $section = [regex]::Match($changelog, "(?ms)^## \[$([regex]::Escape($version))\][^\n]*\n(.*?)(?=^## \[|\z)").Groups[1].Value.Trim()
+          if (-not $section) { $section = "WolfCmd $version." }
+          $notes = "$section`n`n## Install`n`nWith winget, or run the installer below. ``SHA256SUMS`` lists its SHA-256."
+          Set-Content -Path notes.md -Value $notes -Encoding utf8
+          $flags = @("--draft", "--title", "WolfCmd $version", "--notes-file", "notes.md", "--verify-tag")
+          if ($version.Contains("-")) { $flags += "--prerelease" }
+          gh release create $env:GITHUB_REF_NAME @flags out/*

@@ -63,7 +63,9 @@ winget install Wolfknight949.WolfCmd.Beta
 
 Or download the installer (`WolfCmd_<version>_x64-setup.exe`) from [Releases](https://github.com/wolfknight949/wolfcmd/releases) and run it. It installs for your user only, no admin rights needed. Update with `winget upgrade Wolfknight949.WolfCmd.Beta`; the app never updates or checks for updates by itself.
 
-> The installer is not code-signed yet, so Windows SmartScreen may warn on first run: choose **More info → Run anyway**.
+### Code signing
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). Signed installers are built from this repository by GitHub Actions; see the [code signing policy](CODE_SIGNING_POLICY.md). Until signing is in place, the installer is unsigned and Windows SmartScreen may warn on first run: choose **More info → Run anyway**.
 
 WolfCmd needs Windows 10 or 11 with the Microsoft Edge WebView2 runtime (part of Windows 11 and current Windows 10).
 
@@ -108,7 +110,7 @@ How the code fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). All th
 
 ## Privacy
 
-WolfCmd sends nothing anywhere without your action: no telemetry, no update checks, no accounts. Agents are started only when you open them (or when you restore a panel that was running one), and Ctrl+click opens web addresses only when you click them. Your workspaces and settings stay in `%APPDATA%\WolfCmd`.
+WolfCmd sends nothing anywhere without your action: no telemetry, no update checks, no accounts. Agents are started only when you open them (or when you restore a panel that was running one), and Ctrl+click opens web addresses only when you click them. Your workspaces and settings stay in `%APPDATA%\WolfCmd`. Details: [PRIVACY.md](PRIVACY.md).
 
 ## Contributing
 
