@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-app-pick-folder"
+description = "Enables the app_pick_folder command without any pre-configured scope."
+commands.allow = ["app_pick_folder"]
+
+[[permission]]
+identifier = "deny-app-pick-folder"
+description = "Denies the app_pick_folder command without any pre-configured scope."
+commands.deny = ["app_pick_folder"]

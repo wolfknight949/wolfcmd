@@ -1,0 +1,20 @@
+{
+  "release": {
+    "sourceRepo": "wolfknight949/wolfcmd",
+    "sourceRemote": "origin",
+    "publicRepo": "wolfknight949/wolfcmd"
+  },
+  "winget": {
+    "packageIdentifier": "Wolfknight949.WolfCmd",
+    "publisher": "wolfknight949",
+    "packageName": "WolfCmd",
+    "moniker": "wolfcmd",
+    "license": "MIT",
+    "licenseUrl": "https://github.com/wolfknight949/wolfcmd/blob/main/LICENSE",
+    "shortDescription": "A workspace terminal for AI coding agents",
+    "tags": ["terminal", "console", "ai", "agents", "conpty"]
+  },
+  "signing": {
+    "windowsSignCommand": null
+  }
+}

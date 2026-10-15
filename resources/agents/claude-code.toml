@@ -1,0 +1,50 @@
+# Claude Code (Anthropic). Flags per the Claude Code CLI reference; verify with `claude --help`
+# when the version changes (docs/guides/agents.md). Tested: 2.1.292.
+id = "claude-code"
+name = "Claude Code"
+order = 10
+command = "claude"
+detect = ["claude"]
+# N-06: besides PATH and the shim folders (winget links, ~/.local/bin of the native
+# installer, npm…): winget's package folder (winget doesn't always add a link) and the copy
+# bundled with the Claude desktop app.
+locations = [
+  '%LOCALAPPDATA%\Microsoft\WinGet\Packages\Anthropic.ClaudeCode_*\claude.exe',
+  '%APPDATA%\Claude\claude-code\*\*\claude.exe',
+  '%APPDATA%\Claude\claude-code\*\claude.exe',
+]
+color = 7
+# N-06: WolfCmd picks the session ID of a new panel, so a restored panel resumes exactly that
+# session. Verified with 2.1.292 `claude --help`: "--session-id <uuid> Use a specific session
+# ID for the conversation (must be a valid UUID)".
+session_id = ["--session-id", "{session}"]
+resume = "claude --resume {session_id}"
+fallback = "claude --continue"
+# N-06: a panel restored before Claude Code saved its session (nothing typed yet) can't resume
+# it, so the panel types `claude --resume <id> || claude --session-id <id>`. Verified with
+# 2.1.292 in a real console (2026-10-14), both scoped to the folder Claude Code runs in:
+# `claude --resume <unsaved id>` prints "No conversation found with session ID: <id>" and exits
+# 1; `claude --session-id <saved id>` prints "Error: Session ID <id> is already in use." and
+# exits 1. Exactly one of the two runs.
+resume_or_new = true
+# N-06: the session picker (a second restored panel without a session opens it). Verified with
+# 2.1.292 `claude --help`: "-r, --resume [value] Resume a conversation by session ID, or open
+# interactive picker"; "-c, --continue Continue the most recent conversation in the current
+# directory" (the fallback).
+resume_pick = "claude --resume"
+# N-06: Remote Control (claude.ai/code, the Claude app) when the user turned it on for the
+# project. Verified with 2.1.292 `claude --help`: "--remote-control [name] Start an interactive
+# session with Remote Control enabled (optionally named)". The name is always given: without it
+# a first prompt after the flag would become the name.
+remote_control = ["--remote-control", "{name}"]
+# N-02: pasting an image into its panel presses this, and Claude Code reads the clipboard
+# itself. Verified in 2.1.292: `chat:imagePaste` is Alt+V on Windows (and WSL), Ctrl+V elsewhere.
+image_paste = "alt+v"
+# N-06: the Agents menu offers to copy this when Claude Code is missing (code.claude.com/docs).
+install = "winget install Anthropic.ClaudeCode"
+docs = "https://code.claude.com/docs/en/setup"
+# N-06: the terminal title while it works. Read in 2.1.292's bundled source (2026-10-14): the title
+# is "<glyph> <title>", the glyph alternating ◐ / ◑ every 960 ms while busy (frozen, not removed,
+# while its terminal is unfocused) and ✳ when idle; always ✳ under tmux, screen or zellij, no
+# title at all with CLAUDE_CODE_DISABLE_TERMINAL_TITLE (WolfCmd then goes by output activity).
+working_title = '^[◐◑] '

@@ -1,0 +1,29 @@
+[package]
+name = "wcmd-pty"
+version.workspace = true
+description = "ConPTY sessions and shell profiles"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# crash-safe side files (`wcmd_config::fs::write_atomic`).
+wcmd-config.workspace = true
+portable-pty.workspace = true
+serde.workspace = true
+specta.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+which.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_System_Registry"] }
+windows-core.workspace = true
+
+[dev-dependencies]
+sha2.workspace = true
+
+[lints]
+workspace = true

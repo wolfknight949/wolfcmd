@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-app-clipboard-text"
+description = "Enables the app_clipboard_text command without any pre-configured scope."
+commands.allow = ["app_clipboard_text"]
+
+[[permission]]
+identifier = "deny-app-clipboard-text"
+description = "Denies the app_clipboard_text command without any pre-configured scope."
+commands.deny = ["app_clipboard_text"]

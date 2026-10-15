@@ -1,0 +1,19 @@
+[package]
+name = "wcmd-state"
+version.workspace = true
+description = "The workspace document (N-03, N-05): workspaces, splits, panel tabs, projects; versioned and saved crash-safe"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+specta.workspace = true
+tracing.workspace = true
+wcmd-config.workspace = true
+
+[lints]
+workspace = true

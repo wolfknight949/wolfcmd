@@ -1,0 +1,38 @@
+# OpenAI Codex CLI. Verified with `codex resume --help` (codex-cli 0.162): `codex resume
+# <SESSION_ID>` and `codex resume --last` (the newest session in this folder).
+id = "codex"
+name = "Codex"
+order = 20
+command = "codex"
+detect = ["codex"]
+# N-06: besides PATH and the shim folders (npm `@openai/codex`, winget links…): winget's
+# package folder, the CLI bundled with the VS Code extension, and the one in the Codex app.
+locations = [
+  '%LOCALAPPDATA%\Microsoft\WinGet\Packages\OpenAI.Codex_*\codex.exe',
+  '%LOCALAPPDATA%\Microsoft\WinGet\Packages\OpenAI.Codex_*\codex-x86_64-pc-windows-msvc.exe',
+  '%USERPROFILE%\.vscode\extensions\openai.chatgpt-*\bin\windows-x86_64\codex.exe',
+  '%ProgramFiles%\WindowsApps\OpenAI.Codex_*\app\resources\codex.exe',
+]
+color = 2
+resume = "codex resume {session_id}"
+fallback = "codex resume --last"
+# N-06: verified with `codex resume --help` (codex-cli 0.162): "picker by default; use --last to
+# continue the most recent" (both limited to sessions of this folder unless `--all`).
+# N-06: no `session_id`: Codex can't be given an ID or a name at start. `codex resume --help`
+# (0.162): "[SESSION_ID] Session id (UUID) or session name", but `codex --help` has no name
+# option, and `codex exec --strict-config -c thread_name=x` (also `session_name`, `name`) says
+# "unknown configuration field `thread_name` in -c/--config override" (verified 2026-10-14). So
+# when several restored Codex panels share a folder, the first continues the latest session
+# (`fallback`) and the others open this picker.
+resume_pick = "codex resume"
+# N-02: pasting an image into its panel presses this, and Codex reads the clipboard itself.
+# Verified in codex-cli 0.162: "Paste an image with `Ctrl+V` to attach it to your next message."
+image_paste = "ctrl+v"
+# N-06: the Agents menu offers to copy this when Codex is missing (npm package @openai/codex).
+install = "npm i -g @openai/codex"
+docs = "https://developers.openai.com/codex/cli"
+# N-06: the terminal title while it works. Read in openai/codex `codex-rs/tui/src/chatwidget/
+# status_surfaces.rs` (main, 2026-10-14): the title's "activity" item is a Braille spinner frame
+# (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏, every 100 ms) while a task runs and nothing when idle; it comes first by default
+# (`tui.terminal_title`, items joined by spaces), so the frame is matched as its own word.
+working_title = '(^|\s)[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏](\s|$)'

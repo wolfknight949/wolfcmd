@@ -1,0 +1,90 @@
+{
+  "name": "wolfcmd",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wolfknight949/wolfcmd.git"
+  },
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "cd crates/wcmd-app && tauri dev",
+    "build": "cd crates/wcmd-app && tauri build",
+    "tauri": "cd crates/wcmd-app && tauri",
+    "gen:bindings": "cargo run -q --locked -p wcmd-app --example gen-bindings",
+    "check": "pnpm build:ui && pnpm format:check && pnpm lint && pnpm typecheck && pnpm knip && pnpm test",
+    "format": "prettier --write . && cargo fmt --all",
+    "format:check": "prettier --check . && cargo fmt --all --check",
+    "lint": "pnpm lint:ts && pnpm lint:rust",
+    "lint:ts": "eslint . --max-warnings 0",
+    "lint:rust": "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "knip": "knip",
+    "test": "pnpm -r --if-present test && cargo test --workspace --locked",
+    "e2e": "pnpm e2e:build && pnpm --filter @wolfcmd/e2e e2e",
+    "e2e:build": "cd crates/wcmd-app && tauri build --debug --no-bundle",
+    "release": "cargo run -q --locked -p release --",
+    "build:ui": "pnpm --filter @wolfcmd/app build",
+    "icons": "node tools/icon-font.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tauri-apps/cli": "^2.12.1",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "knip": "^5.70.0",
+    "lucide-static": "1.48.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1"
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "knip": {
+    "ignoreWorkspaces": [],
+    "workspaces": {
+      ".": {
+        "entry": [
+          "tools/icon-font.mjs"
+        ]
+      },
+      "packages/app": {
+        "project": [
+          "src/**/*.{ts,tsx}"
+        ]
+      },
+      "packages/ui-kit": {
+        "entry": [],
+        "project": [
+          "src/**/*.{ts,tsx}"
+        ]
+      },
+      "packages/bindings": {
+        "entry": [
+          "src/index.ts"
+        ]
+      },
+      "tests/e2e": {
+        "entry": [
+          "src/**/*.e2e.ts"
+        ],
+        "project": [
+          "src/**/*.ts"
+        ]
+      }
+    },
+    "rules": {
+      "types": "off"
+    },
+    "ignoreDependencies": [
+      "tailwindcss"
+    ]
+  }
+}

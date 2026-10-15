@@ -1,0 +1,24 @@
+{
+  "name": "@wolfcmd/bindings",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wolfknight949/wolfcmd.git",
+    "directory": "packages/bindings"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.12.1"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

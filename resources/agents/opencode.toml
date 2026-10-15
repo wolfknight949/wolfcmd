@@ -1,0 +1,8 @@
+# OpenCode. Verify `opencode --help` (--continue) when the version changes.
+id = "opencode"
+name = "OpenCode"
+order = 60
+command = "opencode"
+detect = ["opencode"]
+color = 4
+fallback = "opencode --continue"

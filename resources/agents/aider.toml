@@ -1,0 +1,8 @@
+# Aider. No session IDs; the chat history in the folder is restored.
+id = "aider"
+name = "Aider"
+order = 50
+command = "aider"
+detect = ["aider"]
+color = 3
+fallback = "aider --restore-chat-history"

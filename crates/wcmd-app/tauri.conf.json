@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WolfCmd",
+  "mainBinaryName": "WolfCmd",
+  "version": "0.7.1-beta.1",
+  "identifier": "dev.wolfcmd.app",
+  "build": {
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../../packages/app/dist",
+    "beforeDevCommand": "pnpm --filter @wolfcmd/app dev",
+    "beforeBuildCommand": "pnpm --filter @wolfcmd/app build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "WolfCmd",
+        "width": 1100,
+        "height": 700,
+        "minWidth": 480,
+        "minHeight": 320,
+        "center": true,
+        "visible": false,
+        "focus": false,
+        "decorations": false,
+        "shadow": true,
+        "backgroundColor": "#1f1e1d",
+        "zoomHotkeysEnabled": false,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "wolfknight949",
+    "homepage": "https://github.com/wolfknight949/wolfcmd",
+    "shortDescription": "A workspace terminal for AI coding agents",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico"
+      }
+    },
+    "resources": {
+      "../../resources/conpty/x64/conpty.dll": "conpty.dll",
+      "../../resources/conpty/x64/OpenConsole.exe": "OpenConsole.exe"
+    },
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"]
+  }
+}

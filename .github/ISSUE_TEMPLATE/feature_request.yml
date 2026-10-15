@@ -1,0 +1,23 @@
+name: Feature request
+description: An idea for WolfCmd.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: WolfCmd stays small on purpose; every feature is judged by how working in one or two terminals feels. Tell us the problem first, then the idea.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: How you imagine it working. Other terminals or tools that do it well are welcome references.
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else

@@ -1,0 +1,21 @@
+# Rust is formatted by rustfmt
+target/
+*.rs
+
+# Generated
+pnpm-lock.yaml
+packages/bindings/
+crates/wcmd-app/gen/
+
+# Saved-format fixtures must stay byte for byte what that format version wrote
+crates/*/fixtures/
+
+# Docs are reviewed, not auto-formatted
+*.md
+
+# Output
+dist/
+coverage/
+
+# Local AI coding tool folders
+.claude/

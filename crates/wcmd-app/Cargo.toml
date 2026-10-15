@@ -1,0 +1,64 @@
+[package]
+name = "wcmd-app"
+version.workspace = true
+description = "WolfCmd.exe: the Tauri app (window, terminals, saved workspaces, IPC)"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+default-run = "WolfCmd"
+
+[lib]
+name = "wcmd_app"
+
+[[bin]]
+name = "WolfCmd"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+specta.workspace = true
+specta-typescript.workspace = true
+tauri.workspace = true
+tauri-plugin-single-instance.workspace = true
+tauri-specta.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+wcmd-agents.workspace = true
+wcmd-config.workspace = true
+wcmd-pty.workspace = true
+wcmd-state.workspace = true
+wcmd-term.workspace = true
+which.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+webview2-com.workspace = true
+windows = { workspace = true, features = [
+  "Data_Xml_Dom",
+  "Foundation",
+  "UI_Notifications",
+  "Win32_Graphics_Gdi",
+  "Win32_System_Com",
+  "Win32_System_DataExchange",
+  "Win32_System_Memory",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Time",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+windows-core.workspace = true
+
+[dev-dependencies]
+# The screen as text in the session tests.
+wcmd-term = { workspace = true, features = ["test-util"] }
+
+[lints]
+workspace = true

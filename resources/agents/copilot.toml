@@ -1,0 +1,22 @@
+# GitHub Copilot CLI. Per the Copilot CLI command reference: `--resume [SESSION-ID]` and
+# `--continue` (the most recent session). Verify `copilot --help` when the version changes.
+id = "copilot"
+name = "Copilot CLI"
+order = 40
+command = "copilot"
+detect = ["copilot"]
+# N-06: besides PATH and the shim folders (npm `@github/copilot`, winget links…): winget's
+# package folder.
+locations = [
+  '%LOCALAPPDATA%\Microsoft\WinGet\Packages\GitHub.Copilot_*\copilot.exe',
+]
+color = 6
+resume = "copilot --resume {session_id}"
+fallback = "copilot --continue"
+# N-06: Copilot CLI 1.0.95 `copilot --help`: "-r, --resume [<value>]" (the session is optional;
+# the docs: "select and resume an interactive CLI session") and "--continue Resume the most
+# recent session" (the fallback). The picker itself was not opened here.
+resume_pick = "copilot --resume"
+# N-06: the Agents menu offers to copy this when Copilot CLI is missing (npm package @github/copilot).
+install = "npm i -g @github/copilot"
+docs = "https://docs.github.com/en/copilot/how-tos/copilot-cli"

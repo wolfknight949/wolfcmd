@@ -1,0 +1,9 @@
+{
+  "//": "Generated code: keep the strict checks, but don't fail on unused helpers it emits.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src"]
+}

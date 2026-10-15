@@ -1,0 +1,41 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Tauri
+crates/wcmd-app/gen/
+
+# Test output
+tests/e2e/screenshots/
+
+# Local release builds (pnpm release build), their runnable copies and test data
+/release/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.key
+
+# OS / editors
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vs/
+*.swp
+
+# Local AI coding tool folders
+.claude/
+
+
+# Scratch drafts (design explorations), kept out of the repository.
+/output/

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-done"
+description = "Enables the agent_done command without any pre-configured scope."
+commands.allow = ["agent_done"]
+
+[[permission]]
+identifier = "deny-agent-done"
+description = "Denies the agent_done command without any pre-configured scope."
+commands.deny = ["agent_done"]

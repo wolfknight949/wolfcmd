@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in WolfCmd doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Open a new tab
+        2. Split right
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: WolfCmd version
+      description: Settings › About.
+      placeholder: 0.7.1-beta.1
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: input
+    id: shell
+    attributes:
+      label: Shell or agent involved
+      placeholder: PowerShell 7, Claude Code 2.x, ...
+  - type: textarea
+    id: more
+    attributes:
+      label: Screenshots or anything else
+      description: Please leave out anything private (paths, tokens, terminal output you don't want to share).

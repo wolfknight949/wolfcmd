@@ -1,0 +1,957 @@
+/*
+ * Entry stylesheet for apps: `@import "@wolfcmd/ui-kit/styles.css";` after
+ * `@import "tailwindcss";`. Maps the --wc-* tokens onto Tailwind utilities, so
+ * components use `bg-bg`, `text-fg-muted`, `rounded-control`… and never raw values.
+ */
+@import "./tokens/tokens.css";
+@import "./base.css";
+
+@source "./";
+
+/* The icon font ships with the app (Lucide's line icons, ISC; see fonts/LICENSE), so icons
+   are the same on every OS. `block`: a private-use glyph has no fallback worth showing while
+   the (local, 13 KB) font loads. */
+@font-face {
+  font-family: "WolfCmd Icons";
+  font-style: normal;
+  font-weight: normal;
+  font-display: block;
+  src: url("./fonts/wolfcmd-icons.woff2") format("woff2");
+}
+
+@theme inline {
+  /* Only token colors exist (Tailwind's palette is cleared; `transparent` and
+     `current` stay). Opacity modifiers (`bg-fg/10`) are rejected by ESLint: use the fills,
+     lines and tints below. */
+  --color-*: initial;
+  --color-bg: var(--wc-bg);
+  --color-bg-elevated: var(--wc-bg-elevated);
+  --color-bg-subtle: var(--wc-bg-subtle);
+  --color-fg: var(--wc-fg);
+  --color-fg-muted: var(--wc-fg-muted);
+  --color-accent: var(--wc-accent);
+  --color-accent-fg: var(--wc-accent-fg);
+  --color-danger: var(--wc-danger);
+  --color-warning: var(--wc-warning);
+  --color-success: var(--wc-success);
+  --color-term-bg: var(--wc-term-bg);
+  --color-caption-close: var(--wc-caption-close);
+  --color-caption-close-pressed: var(--wc-caption-close-pressed);
+  --color-caption-close-fg: var(--wc-caption-close-fg);
+  --color-flyout: var(--wc-flyout-bg);
+  --color-fg-disabled: var(--wc-fg-disabled);
+  --color-fill-quiet: var(--wc-fill-quiet);
+  --color-fill-hover: var(--wc-fill-hover);
+  --color-fill-pressed: var(--wc-fill-pressed);
+  --color-fill-strong: var(--wc-fill-strong);
+  --color-line: var(--wc-line);
+  --color-line-strong: var(--wc-line-strong);
+  --color-accent-tint: var(--wc-accent-tint);
+  --color-accent-line: var(--wc-accent-line);
+  --color-accent-fg-tint: var(--wc-accent-fg-tint);
+  --color-warning-tint: var(--wc-warning-tint);
+  --color-warning-line: var(--wc-warning-line);
+  --color-scrim: var(--wc-scrim);
+
+  --spacing: var(--wc-space-1);
+  /* Two radii (plus `rounded-full` and `rounded-none`); Tailwind's own are cleared. */
+  --radius-*: initial;
+  --radius-control: var(--wc-radius-control);
+  --radius-overlay: var(--wc-radius-overlay);
+
+  --font-ui: var(--wc-font-ui);
+  --font-mono: var(--wc-font-mono);
+  --font-icons: var(--wc-font-icons);
+  /* Only the type and icon scales exist as `text-*` sizes (Tailwind's own are cleared),
+     so an off-scale size can't be written; `text-[Npx]` is rejected by ESLint. Icon sizes set no
+     line height (they inherit the row's). */
+  --text-*: initial;
+  --text-xs: var(--wc-text-xs);
+  --text-xs--line-height: var(--wc-text-xs-leading);
+  --text-sm: var(--wc-text-sm);
+  --text-sm--line-height: var(--wc-text-sm-leading);
+  --text-md: var(--wc-text-md);
+  --text-md--line-height: var(--wc-text-md-leading);
+  --text-base: var(--wc-text-base);
+  --text-base--line-height: var(--wc-text-base-leading);
+  --text-heading: var(--wc-text-heading);
+  --text-heading--line-height: var(--wc-text-heading-leading);
+  --text-lg: var(--wc-text-lg);
+  --text-lg--line-height: var(--wc-text-lg-leading);
+  --text-icon-xs: var(--wc-icon-xs);
+  --text-icon-sm: var(--wc-icon-sm);
+  --text-icon-md: var(--wc-icon-md);
+  --text-icon-lg: var(--wc-icon-lg);
+  --text-icon-xl: var(--wc-icon-xl);
+
+  --shadow-flyout: var(--wc-shadow-flyout);
+  --shadow-dialog: var(--wc-shadow-dialog);
+
+  --ease-out: var(--wc-ease-out);
+  --ease-in-out: var(--wc-ease-in-out);
+}
+
+/* Flyouts open calmly: a fade and a 4 px drift away from their anchor (`--wc-flyout-slide`).
+   Reduced motion zeroes the duration token, so the animation disappears. */
+@keyframes wc-flyout-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--wc-flyout-dx, 0px), var(--wc-flyout-dy, var(--wc-flyout-rise)))
+      scale(var(--wc-flyout-scale, 1));
+  }
+}
+
+@keyframes wc-flyout-out {
+  to {
+    opacity: 0;
+    transform: translate(var(--wc-flyout-dx, 0px), var(--wc-flyout-dy, var(--wc-flyout-rise)))
+      scale(var(--wc-flyout-scale, 1));
+  }
+}
+
+.wc-flyout-in {
+  animation: wc-flyout-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+/* N-01: things that appear and leave: a fade, and a slight settle from `--wc-enter-scale`.
+   Opacity and transform only; reduced motion zeroes the durations. */
+@keyframes wc-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes wc-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes wc-settle-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--wc-enter-scale));
+  }
+}
+
+@keyframes wc-settle-out {
+  to {
+    opacity: 0;
+    transform: scale(var(--wc-enter-scale));
+  }
+}
+
+.wc-fade-in {
+  animation: wc-fade-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+/* A small mark that appears (a pill's agent mark): it settles in. */
+.wc-mark-in {
+  animation: wc-settle-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+/* N-01: a notice under the title bar slides down a few pixels as it fades in. */
+.wc-notice-in {
+  animation: wc-flyout-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+/* N-01: the copy of something that just closed (`useExitMotion`, `leaveGhost`), fading out where
+   it was: nobody can point at it, focus it or find it. Its own children don't replay their
+   entrances; a dialog's surface settles out with it. */
+.wc-leaving.wc-leaving {
+  pointer-events: none;
+  animation: wc-settle-out var(--wc-dur-fast) var(--wc-ease-out) forwards;
+}
+
+.wc-leaving.wc-leaving-fade {
+  animation-name: wc-fade-out;
+}
+
+.wc-leaving * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.wc-leaving .wc-dialog-surface.wc-dialog-surface {
+  animation: wc-settle-out var(--wc-dur-fast) var(--wc-ease-out) forwards !important;
+}
+
+/* Radix flyouts (menus): enter and exit by state; Radix keeps the element mounted until
+   the exit animation ends. The slide comes from the side the flyout opened on. */
+.wc-flyout {
+  /* N-01: a menu grows a touch from the side it opened on as it drifts in. */
+  --wc-flyout-scale: var(--wc-press-scale-wide);
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin, top);
+}
+
+.wc-flyout[data-side="top"] {
+  --wc-flyout-dy: var(--wc-flyout-slide);
+}
+
+.wc-flyout[data-side="left"] {
+  --wc-flyout-dx: var(--wc-flyout-slide);
+  --wc-flyout-dy: 0px;
+}
+
+.wc-flyout[data-side="right"] {
+  --wc-flyout-dx: var(--wc-flyout-rise);
+  --wc-flyout-dy: 0px;
+}
+
+.wc-flyout[data-state="open"] {
+  animation: wc-flyout-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+/* A closing flyout is already gone for the pointer: a click during its fade-out reaches what
+   is under it instead of being swallowed. */
+.wc-flyout[data-state="closed"] {
+  animation: wc-flyout-out var(--wc-dur-fast) var(--wc-ease-out) forwards;
+  pointer-events: none;
+}
+
+/* N-01: press feedback for buttons: hover colors fade, and the button settles to
+   `--wc-press-scale` while pressed. In the components layer, so a utility on the same element
+   still wins. */
+@layer components {
+  .wc-press {
+    transition-property: color, background-color, border-color, opacity, scale;
+    transition-duration: var(--wc-dur-fast);
+    transition-timing-function: var(--wc-ease-out);
+  }
+
+  .wc-press:active:not(:disabled) {
+    scale: var(--wc-press-scale);
+  }
+}
+
+/* N-06: a busy spinner turns (`Spinner`); a zero duration (reduced motion) leaves it still. */
+@keyframes wc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wc-spin {
+  animation: wc-spin var(--wc-dur-spin) linear infinite;
+  transform-origin: center;
+}
+
+/* An indeterminate progress bar (a third of the width, sweeping across). */
+@keyframes wc-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.wc-indeterminate {
+  animation: wc-indeterminate 1.2s var(--wc-ease-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-indeterminate {
+    animation: none;
+    width: 100%;
+    opacity: 0.6;
+  }
+}
+
+/* N-06: a tab pill's small reward when an agent finished unseen: a soft ring and tint in the
+   finished agent's color (`--wc-glow-agent` with `data-agent`, set by the app; else `--wc-glow`)
+   that breathe in and out once (`data-glowing`, set by the app), eased like the panel's finish
+   glow. Opacity only. None under reduced motion (`--wc-dur-glow` is 0; the app doesn't start it
+   either). */
+@keyframes wc-glow {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Clearly visible but soft: a ring, a halo and a tint. Without an agent's color: the accent with a
+   touch of the warm tone in the halo. */
+.wc-glow {
+  --wc-glow-ring: var(--wc-glow);
+  --wc-glow-halo: var(--wc-glow-warm);
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 0 1.5px var(--wc-glow-ring),
+    0 0 12px 2px color-mix(in srgb, var(--wc-glow-ring) 75%, transparent),
+    0 0 22px 4px color-mix(in srgb, var(--wc-glow-halo) 30%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--wc-glow-ring) 35%, transparent);
+  background-color: color-mix(in srgb, var(--wc-glow-ring) 26%, transparent);
+}
+
+/* N-06: only the finished agent's color, its halo a lighter, luminous tint of the same hue (like
+   the panel's finish glow). */
+.wc-glow[data-agent] {
+  --wc-glow-ring: var(--wc-glow-agent);
+  --wc-glow-halo: color-mix(
+    in srgb,
+    var(--wc-glow-agent) var(--wc-finish-glow-tint-mix),
+    var(--wc-finish-glow-lift)
+  );
+}
+
+.wc-glow[data-glowing] {
+  animation: wc-glow var(--wc-dur-glow) var(--wc-ease-gentle) forwards;
+}
+
+/* N-06: the finish reward: when an agent finishes and the user wasn't looking at its panel, the
+   panel's rounded edge glows once in the agent's color: a thin bright line on the edge and a short
+   haze fading inward swell up slowly and fade out softly, one breath (`--wc-dur-finish-glow`,
+   about 2.8 s, `--wc-ease-gentle`). Nothing moves around the panel (a light circling it read as strange).
+   Only the agent's color: a gradient between it and a lighter, luminous tint of the same hue. An
+   overlay inside the block, above its header and body, that nobody can point at; idle it is hidden
+   and runs nothing. Opacity only. The app sets `data-glowing` (never under reduced motion, where
+   the duration is 0 too). */
+@keyframes wc-finish-glow {
+  0% {
+    opacity: 0;
+  }
+  /* A slow swell to full, then a longer, softer fade: one breath, no hold. */
+  38% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.wc-finish-glow {
+  /* The agent's color lifted toward light: the same hue, luminous. */
+  --wc-finish-glow-tint: color-mix(
+    in srgb,
+    var(--wc-finish-glow-agent) var(--wc-finish-glow-tint-mix),
+    var(--wc-finish-glow-lift)
+  );
+  --wc-finish-glow-sweep: linear-gradient(
+    135deg,
+    var(--wc-finish-glow-agent) 0%,
+    var(--wc-finish-glow-tint) 50%,
+    var(--wc-finish-glow-agent) 100%
+  );
+  position: absolute;
+  inset: 0;
+  /* Above the block's header, body and its own overlays (find bar, sticky header). */
+  z-index: 25;
+  overflow: hidden;
+  /* The block's rounded edge, inside its border. */
+  border-radius: calc(var(--wc-radius-overlay) - 1px);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  contain: strict;
+}
+
+.wc-finish-glow[data-glowing] {
+  visibility: visible;
+  animation: wc-finish-glow var(--wc-dur-finish-glow) var(--wc-ease-gentle) forwards;
+}
+
+/* The haze: the sweep's colors, fading from the edge inward. */
+.wc-finish-glow-haze {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: var(--wc-finish-glow-strength);
+  background: var(--wc-finish-glow-sweep);
+  mask-image:
+    linear-gradient(
+      to bottom,
+      #000,
+      rgb(0 0 0 / 0.35) calc(var(--wc-finish-glow-w) * 0.3),
+      transparent var(--wc-finish-glow-w)
+    ),
+    linear-gradient(
+      to top,
+      #000,
+      rgb(0 0 0 / 0.35) calc(var(--wc-finish-glow-w) * 0.3),
+      transparent var(--wc-finish-glow-w)
+    ),
+    linear-gradient(
+      to right,
+      #000,
+      rgb(0 0 0 / 0.35) calc(var(--wc-finish-glow-w) * 0.3),
+      transparent var(--wc-finish-glow-w)
+    ),
+    linear-gradient(
+      to left,
+      #000,
+      rgb(0 0 0 / 0.35) calc(var(--wc-finish-glow-w) * 0.3),
+      transparent var(--wc-finish-glow-w)
+    );
+}
+
+/* The bright line on the very edge, following its rounded corners. */
+.wc-finish-glow-line {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--wc-finish-glow-line);
+  background: var(--wc-finish-glow-sweep);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+@media (forced-colors: active) {
+  .wc-finish-glow {
+    display: none;
+  }
+}
+
+/* No cut-off content in dialogs. The layer leaves a margin around the dialog (more above
+   than below), the dialog never grows past it, and only its body scrolls: the
+   title stays at the top and the buttons stay at the bottom, on an 800 x 600 window too. In
+   the components layer, so a utility on the same element (a different top offset) still wins. */
+@layer components {
+  .wc-dialog-layer {
+    padding: clamp(var(--wc-space-4), 12vh, 80px) var(--wc-space-4) var(--wc-space-4);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .wc-dialog {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  /* The dialog's one scroll container (a flex child between the header and the footer). */
+  .wc-dialog-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Header and footer never shrink or scroll. */
+  .wc-dialog-pinned {
+    flex: none;
+  }
+}
+
+/* N-01: surfaces and controls in WolfCmd's look (calm and warm).
+   Components and callers use these classes, never their own mix of border, background and
+   shadow. In the components layer, so a utility on the same element (a width, a padding) wins. */
+@layer components {
+  /* Flyouts (popovers, menus, find bars): an opaque raised surface, soft corners, a thin quiet
+     border and a diffuse shadow. */
+  .wc-surface-flyout,
+  .wc-menu {
+    border: 1px solid var(--wc-surface-border);
+    border-radius: var(--wc-radius-overlay);
+    background-color: var(--wc-flyout-bg);
+    box-shadow: var(--wc-shadow-flyout);
+    color: var(--wc-fg);
+  }
+
+  /* A menu (`Menu`, `ContextMenu`): room around the rows, rows with soft corners, a quiet
+     neutral fill under the pointer or the keyboard, the shortcut column on the right. */
+  .wc-menu {
+    padding: var(--wc-menu-pad);
+    font-size: var(--wc-text-sm);
+  }
+
+  .wc-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--wc-menu-gap);
+    min-height: var(--wc-menu-item-h);
+    padding: 0 var(--wc-menu-item-px);
+    border-radius: var(--wc-radius-item);
+    color: var(--wc-fg);
+    line-height: var(--wc-text-sm-leading);
+    cursor: default;
+    outline: none;
+    user-select: none;
+    transition:
+      background-color var(--wc-dur-fast) var(--wc-ease-out),
+      color var(--wc-dur-fast) var(--wc-ease-out);
+  }
+
+  .wc-menu-item[data-highlighted],
+  .wc-menu-item[data-state="open"] {
+    background-color: var(--wc-fill-hover);
+  }
+
+  /* N-10: an item under the one before it (a worktree under its repository): its icon column
+     starts where the parent's label does. */
+  .wc-menu-item-inset {
+    padding-left: calc(var(--wc-menu-item-px) + var(--wc-menu-icon) + var(--wc-menu-gap));
+  }
+
+  .wc-menu-item:active:not([data-disabled]) {
+    background-color: var(--wc-fill-pressed);
+  }
+
+  .wc-menu-item[data-disabled] {
+    color: var(--wc-fg-disabled);
+  }
+
+  /* The icon column: a 16 px line icon, or the check or radio mark. */
+  .wc-menu-icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--wc-menu-icon);
+    color: var(--wc-fg-muted);
+    font-family: var(--wc-font-icons);
+    font-size: var(--wc-icon-md);
+    line-height: 1;
+  }
+
+  .wc-menu-item[data-highlighted] .wc-menu-icon {
+    color: var(--wc-fg);
+  }
+
+  /* The chosen item of a one-choice section: a small dot in the accent. */
+  .wc-menu-radio {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--wc-accent);
+  }
+
+  /* The keyboard shortcut: right-aligned, small, quiet. */
+  .wc-menu-hint {
+    margin-left: var(--wc-space-6);
+    font-size: var(--wc-text-xs);
+    color: var(--wc-fg-subtle);
+  }
+
+  .wc-menu-item[data-disabled] .wc-menu-hint {
+    color: var(--wc-fg-disabled);
+  }
+
+  /* Separators: a thin line inset to the rows. */
+  .wc-menu-separator {
+    height: 1px;
+    margin: var(--wc-menu-sep-my) var(--wc-menu-item-px);
+    background-color: var(--wc-divider);
+  }
+
+  .wc-menu-label {
+    padding: 6px var(--wc-menu-item-px) 4px;
+    font-size: var(--wc-text-xs);
+    color: var(--wc-fg-subtle);
+  }
+
+  /* The tooltip (TooltipHost): a small raised chip, 12 px text, no arrow. */
+  .wc-tooltip {
+    position: fixed;
+    z-index: 1000;
+    max-width: var(--wc-tooltip-max-w);
+    padding: var(--wc-tooltip-py) var(--wc-tooltip-px);
+    border-radius: var(--wc-radius-item);
+    background-color: var(--wc-tooltip-bg);
+    box-shadow: var(--wc-shadow-tooltip);
+    color: var(--wc-tooltip-fg);
+    font-family: var(--wc-font-ui);
+    font-size: var(--wc-text-xs);
+    line-height: var(--wc-text-xs-leading);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    pointer-events: none;
+    animation: wc-tooltip-in var(--wc-dur-fast) var(--wc-ease-out);
+  }
+
+  /* A modal dialog: one calm surface (the buttons sit on it too), soft corners, a thin border
+     and a deep diffuse shadow. Pair with `wc-dialog`. */
+  .wc-dialog-surface {
+    border: 1px solid var(--wc-surface-border);
+    border-radius: var(--wc-radius-overlay);
+    background-color: var(--wc-dialog-bg);
+    box-shadow: var(--wc-shadow-dialog);
+    color: var(--wc-fg);
+  }
+
+  /* The heading: larger and calm (medium, not bold). */
+  .wc-dialog-title {
+    font-size: var(--wc-text-lg);
+    line-height: var(--wc-text-lg-leading);
+    font-weight: 500;
+    color: var(--wc-fg);
+  }
+
+  /* The buttons: right-aligned, 8 px apart, the main one first. */
+  .wc-dialog-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--wc-space-2);
+    padding: var(--wc-space-2) var(--wc-dialog-pad) var(--wc-dialog-pad);
+  }
+
+  /* Buttons: the primary (filled with the accent), the standard (a quiet neutral fill), the
+     subtle one (a ghost: a fill only under the pointer) and danger. No hard borders. */
+  .wc-button,
+  .wc-button-accent,
+  .wc-button-subtle,
+  .wc-button-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--wc-space-2);
+    min-height: var(--wc-control-h);
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--wc-radius-control);
+    font-size: var(--wc-text-sm);
+    font-weight: 500;
+    line-height: var(--wc-text-sm-leading);
+    white-space: nowrap;
+    transition-property: color, background-color, box-shadow, scale;
+    transition-duration: var(--wc-dur-fast);
+    transition-timing-function: var(--wc-ease-out);
+  }
+
+  .wc-button {
+    background-color: var(--wc-button-bg);
+    color: var(--wc-fg);
+  }
+
+  .wc-button:hover:not(:disabled) {
+    background-color: var(--wc-button-hover);
+  }
+
+  .wc-button:active:not(:disabled) {
+    background-color: var(--wc-button-pressed);
+  }
+
+  .wc-button:disabled {
+    color: var(--wc-fg-disabled);
+  }
+
+  /* N-01: a gentle press: the button settles a little. */
+  .wc-button:active:not(:disabled),
+  .wc-button-accent:active:not(:disabled),
+  .wc-button-subtle:active:not(:disabled),
+  .wc-button-danger:active:not(:disabled) {
+    scale: var(--wc-press-scale-wide);
+  }
+
+  .wc-button-accent {
+    background-color: var(--wc-accent);
+    color: var(--wc-accent-fg);
+  }
+
+  .wc-button-accent:hover:not(:disabled) {
+    background-color: var(--wc-accent-hover);
+  }
+
+  .wc-button-accent:active:not(:disabled) {
+    background-color: var(--wc-accent-pressed);
+  }
+
+  .wc-button-accent:disabled,
+  .wc-button-danger:disabled {
+    background-color: var(--wc-accent-disabled);
+    color: var(--wc-accent-fg-disabled);
+  }
+
+  .wc-button-subtle {
+    background-color: transparent;
+    color: var(--wc-fg);
+  }
+
+  .wc-button-subtle:hover:not(:disabled) {
+    background-color: var(--wc-fill-hover);
+  }
+
+  .wc-button-subtle:active:not(:disabled) {
+    background-color: var(--wc-fill-pressed);
+  }
+
+  .wc-button-subtle:disabled {
+    color: var(--wc-fg-disabled);
+  }
+
+  /* A button whose menu or popup is open (Radix sets `data-state="open"` on a trigger). */
+  .wc-button-subtle[data-state="open"],
+  .wc-button[data-state="open"] {
+    background-color: var(--wc-fill-strong);
+  }
+
+  /* Danger (delete, discard): the primary's shape in a deep red. */
+  .wc-button-danger {
+    background-color: var(--wc-danger-fill);
+    color: var(--wc-danger-fill-fg);
+  }
+
+  .wc-button-danger:hover:not(:disabled) {
+    background-color: var(--wc-danger-fill-hover);
+  }
+
+  .wc-button-danger:active:not(:disabled) {
+    background-color: color-mix(in srgb, var(--wc-danger-fill) 85%, transparent);
+  }
+
+  /* The small size of every button (rows, toolbars, notices, flyouts). */
+  .wc-button-sm {
+    min-height: var(--wc-control-h-sm);
+    padding: 0 10px;
+    gap: 6px;
+    font-size: var(--wc-text-sm);
+    line-height: var(--wc-text-sm-leading);
+  }
+
+  /* A text field: recessed, a thin border that firms up under the pointer and takes the focus
+     color with a soft halo while focused (no separate focus ring). */
+  .wc-input {
+    min-height: var(--wc-control-h);
+    padding: 6px 10px;
+    border: 1px solid var(--wc-input-border);
+    border-radius: var(--wc-radius-control);
+    background-color: var(--wc-input-bg);
+    color: var(--wc-fg);
+    font-size: var(--wc-text-sm);
+    line-height: var(--wc-text-sm-leading);
+    outline: none;
+    user-select: text;
+    transition:
+      border-color var(--wc-dur-fast) var(--wc-ease-out),
+      box-shadow var(--wc-dur-fast) var(--wc-ease-out);
+  }
+
+  .wc-input:hover:not(:focus, :disabled) {
+    border-color: var(--wc-input-border-hover);
+  }
+
+  .wc-input:focus {
+    border-color: var(--wc-focus-ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wc-focus-ring) 22%, transparent);
+  }
+
+  .wc-input::placeholder {
+    color: var(--wc-fg-subtle);
+  }
+
+  .wc-input:disabled {
+    color: var(--wc-fg-disabled);
+  }
+
+  /* N-07: a toggle: a soft track with a round knob. Off: a neutral track; on: the accent, the
+     knob at the end. The knob slides with the normal duration. */
+  .wc-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wc-space-2);
+    border-radius: calc(var(--wc-toggle-h) / 2);
+    color: var(--wc-fg-muted);
+    font-size: var(--wc-text-sm);
+    line-height: var(--wc-text-sm-leading);
+  }
+
+  .wc-switch-track {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--wc-toggle-w);
+    height: var(--wc-toggle-h);
+    border-radius: calc(var(--wc-toggle-h) / 2);
+    background-color: var(--wc-line-strong);
+    transition: background-color var(--wc-dur-fast) var(--wc-ease-out);
+  }
+
+  .wc-switch-knob {
+    position: absolute;
+    top: calc((var(--wc-toggle-h) - var(--wc-toggle-knob)) / 2);
+    left: calc((var(--wc-toggle-h) - var(--wc-toggle-knob)) / 2);
+    width: var(--wc-toggle-knob);
+    height: var(--wc-toggle-knob);
+    border-radius: 50%;
+    background-color: var(--wc-bg-elevated);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+    /* N-01: it slides by a transform (no layout), and squeezes a little while pressed. */
+    transition:
+      transform var(--wc-dur-normal) var(--wc-ease-out),
+      scale var(--wc-dur-fast) var(--wc-ease-out),
+      background-color var(--wc-dur-fast) var(--wc-ease-out);
+  }
+
+  .wc-switch:active:not(:disabled) .wc-switch-knob {
+    scale: 0.88;
+  }
+
+  .wc-switch:hover .wc-switch-track {
+    background-color: color-mix(in srgb, var(--wc-fg) 30%, transparent);
+  }
+
+  .wc-switch[aria-checked="true"] .wc-switch-track {
+    background-color: var(--wc-accent);
+  }
+
+  .wc-switch[aria-checked="true"]:hover .wc-switch-track {
+    background-color: var(--wc-accent-hover);
+  }
+
+  .wc-switch[aria-checked="true"] .wc-switch-knob {
+    transform: translateX(calc(var(--wc-toggle-w) - var(--wc-toggle-h)));
+    background-color: var(--wc-accent-fg);
+  }
+
+  .wc-switch:disabled {
+    color: var(--wc-fg-disabled);
+  }
+
+  .wc-switch:disabled .wc-switch-track {
+    opacity: 0.5;
+  }
+
+  /* N-07: a segmented control: segments side by side on a quiet track; the chosen one is a raised
+     chip (the elevated surface and a soft shadow). Monochrome; keyboard focus rings the segment. */
+  .wc-segmented {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--wc-radius-control);
+    background-color: var(--wc-fill-hover);
+  }
+
+  .wc-segment {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--wc-control-h-sm);
+    padding: 0 var(--wc-space-3);
+    border-radius: var(--wc-radius-item);
+    color: var(--wc-fg-muted);
+    font-size: var(--wc-text-sm);
+    line-height: var(--wc-text-sm-leading);
+    white-space: nowrap;
+    transition-property: background-color, color, box-shadow, scale;
+    transition-duration: var(--wc-dur-fast);
+    transition-timing-function: var(--wc-ease-out);
+  }
+
+  .wc-segment:hover {
+    color: var(--wc-fg);
+  }
+
+  /* N-01: a quiet fill under the pointer on the ones not chosen, and a gentle press. */
+  .wc-segment:hover:not(:has(:checked)) {
+    background-color: var(--wc-fill-hover);
+  }
+
+  .wc-segment:active {
+    scale: var(--wc-press-scale-wide);
+  }
+
+  .wc-segment:has(:checked) {
+    background-color: var(--wc-bg-elevated);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+    color: var(--wc-fg);
+    font-weight: 500;
+  }
+
+  .wc-segment:has(:focus-visible) {
+    outline: 2px solid var(--wc-focus-ring);
+    outline-offset: 1px;
+  }
+}
+
+@keyframes wc-tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--wc-press-scale-wide));
+  }
+}
+
+/* A dialog settles in: it fades in from `--wc-enter-scale` while its scrim fades in; closing,
+   it settles out (`useExitMotion`). */
+@keyframes wc-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--wc-enter-scale));
+  }
+}
+
+.wc-dialog-in {
+  animation: wc-dialog-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+.wc-scrim-in {
+  animation: wc-fade-in var(--wc-dur-normal) var(--wc-ease-out);
+}
+
+/* High contrast (forced colors): system colors, solid surfaces, and the highlight color under
+   a menu item (backgrounds are otherwise forced to the canvas). */
+@media (forced-colors: active) {
+  .wc-surface-flyout,
+  .wc-menu,
+  .wc-tooltip,
+  .wc-dialog-surface {
+    border-color: CanvasText;
+    background-color: Canvas;
+  }
+
+  .wc-menu-item[data-highlighted],
+  .wc-menu-item[data-state="open"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .wc-menu-item[data-highlighted] .wc-menu-hint {
+    color: HighlightText;
+  }
+
+  .wc-menu-item[data-disabled],
+  .wc-menu-item[data-disabled] .wc-menu-hint {
+    color: GrayText;
+  }
+
+  .wc-menu-separator {
+    background-color: CanvasText;
+  }
+
+  .wc-button,
+  .wc-button-accent,
+  .wc-button-subtle,
+  .wc-button-danger {
+    border-color: ButtonText;
+  }
+
+  .wc-input {
+    border-color: CanvasText;
+  }
+
+  .wc-input:focus {
+    border-color: Highlight;
+  }
+
+  /* Selected, current, pressed and on states drawn as tints vanish here (backgrounds
+     become Canvas): outline them in the highlight color. The focus ring keeps its own. */
+  :is(
+    [aria-selected="true"],
+    [aria-current]:not([aria-current="false"]),
+    [aria-pressed="true"],
+    [role="switch"][aria-checked="true"],
+    [role="radio"][aria-checked="true"]
+  ):not(:focus-visible) {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+}

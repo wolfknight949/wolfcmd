@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.ico binary
+*.woff2 binary
+
+# Generated files: collapsed in diffs, excluded from language stats
+packages/bindings/** linguist-generated=true -diff
+docs/generated/** linguist-generated=true
+*.dll binary
+*.exe binary

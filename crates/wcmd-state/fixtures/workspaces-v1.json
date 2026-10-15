@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "workspaces": [
+    {
+      "id": "w-app",
+      "name": "App",
+      "folder": "C:\\dev\\app",
+      "tabs": [
+        {
+          "id": "t-1",
+          "name": "",
+          "layout": {
+            "kind": "split",
+            "id": "s-1",
+            "direction": "row",
+            "children": [
+              {
+                "kind": "panel",
+                "id": "p-agent",
+                "title": null,
+                "profile": "pwsh",
+                "cwd": "C:\\dev\\app\\src",
+                "agent": {
+                  "agent": "claude-code",
+                  "session": "3f2a1c9e-0b1d-4f6a-8c2e-9a7b5d4c3e21",
+                  "cwd": "C:\\dev\\app",
+                  "running": true
+                }
+              },
+              {
+                "kind": "split",
+                "id": "s-2",
+                "direction": "column",
+                "children": [
+                  {
+                    "kind": "panel",
+                    "id": "p-shell",
+                    "title": "Build",
+                    "profile": "cmd",
+                    "cwd": "C:\\dev\\app"
+                  },
+                  { "kind": "panel", "id": "p-bare" }
+                ],
+                "ratios": [0.3, 0.7]
+              }
+            ],
+            "ratios": [0.65, 0.35]
+          },
+          "focused": "p-shell",
+          "maximized": "p-agent"
+        },
+        { "id": "t-2", "name": "Logs", "layout": null, "focused": null }
+      ],
+      "activeTab": "t-1"
+    },
+    {
+      "id": "w-tree",
+      "name": "feature",
+      "folder": "C:\\dev\\app.worktrees\\feature",
+      "tabs": [
+        {
+          "id": "t-3",
+          "layout": {
+            "kind": "panel",
+            "id": "p-codex",
+            "cwd": "C:\\dev\\app.worktrees\\feature",
+            "agent": { "agent": "codex", "session": null, "running": false }
+          },
+          "focused": "p-codex"
+        }
+      ],
+      "activeTab": "t-3",
+      "main": "w-app"
+    }
+  ],
+  "active": "w-tree"
+}

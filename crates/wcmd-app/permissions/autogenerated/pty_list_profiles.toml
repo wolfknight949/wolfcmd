@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pty-list-profiles"
+description = "Enables the pty_list_profiles command without any pre-configured scope."
+commands.allow = ["pty_list_profiles"]
+
+[[permission]]
+identifier = "deny-pty-list-profiles"
+description = "Denies the pty_list_profiles command without any pre-configured scope."
+commands.deny = ["pty_list_profiles"]

@@ -1,0 +1,17 @@
+# Google Gemini CLI. No resume by ID is relied on yet; verify with `gemini --help`.
+id = "gemini"
+name = "Gemini CLI"
+order = 30
+command = "gemini"
+detect = ["gemini"]
+color = 5
+fallback = "gemini"
+# N-06: the Agents menu offers to copy this when it is missing (npm package @google/gemini-cli).
+install = "npm i -g @google/gemini-cli"
+docs = "https://github.com/google-gemini/gemini-cli"
+# N-06: the terminal title while it works. Read in google-gemini/gemini-cli
+# `packages/cli/src/utils/windowTitle.ts` (main, 2026-10-14): "✦  <thought or Working…>" while
+# responding, "⏲  Working…" while working silently, "◇  Ready" when idle and "✋  Action
+# Required" when it waits for a confirmation; with `useDynamicTitle` off only "Gemini CLI (…)"
+# (WolfCmd then goes by output activity).
+working_title = '^[✦⏲]'

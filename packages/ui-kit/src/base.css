@@ -1,0 +1,142 @@
+/* No web-isms. The app must never feel like a web page. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--wc-bg);
+  color: var(--wc-fg);
+  font-family: var(--wc-font-ui);
+  font-size: var(--wc-text-sm);
+  /* Chrome is not a document: no text selection, no drag ghosts, no bounce. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  overscroll-behavior: none;
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+a,
+svg {
+  -webkit-user-drag: none;
+}
+
+/* The hand cursor is only for real links. */
+a,
+button {
+  cursor: default;
+}
+
+/* Focus rings show for keyboard focus only. In the base layer, so a component that draws its
+   own focus (a text field) can turn the ring off with `outline-none`. */
+@layer base {
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* N-01: one calm ring in the focus color (the accent, or a muted neutral in the monochrome
+     accent), just outside the element, following its rounded corners. */
+  :focus-visible {
+    outline: 2px solid var(--wc-focus-ring);
+    outline-offset: 1px;
+  }
+
+  /* High contrast: the system's highlight color. */
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}
+
+/* N-01: slim scrollbars of our own on every OS (lists, dialogs, menus): no arrow buttons, a clear
+   track and a rounded thumb that shows while its scroller is under the pointer, so resting
+   content stays clean. The terminals draw theirs in the same colors (terminal/theme.ts). */
+::-webkit-scrollbar {
+  width: var(--wc-scrollbar-size);
+  height: var(--wc-scrollbar-size);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: var(--wc-scrollbar-min);
+  border: var(--wc-scrollbar-inset) solid transparent;
+  border-radius: var(--wc-scrollbar-size);
+  background: transparent;
+  background-clip: padding-box;
+}
+
+:hover::-webkit-scrollbar-thumb {
+  background-color: var(--wc-scrollbar-thumb);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--wc-scrollbar-thumb-hover);
+}
+
+/* N-01: radio buttons and checkboxes are drawn by us, the same on every OS: a soft box or circle
+   in the field colors, filled with the accent when chosen. */
+@layer base {
+  input[type="radio"],
+  input[type="checkbox"] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1px solid var(--wc-input-border-hover);
+    background-color: var(--wc-input-bg);
+    transition:
+      background-color var(--wc-dur-fast) var(--wc-ease-out),
+      border-color var(--wc-dur-fast) var(--wc-ease-out);
+  }
+
+  input[type="radio"] {
+    border-radius: 50%;
+  }
+
+  input[type="checkbox"] {
+    border-radius: 4px;
+  }
+
+  input[type="radio"]:checked,
+  input[type="checkbox"]:checked {
+    border-color: var(--wc-accent);
+    background-color: var(--wc-accent);
+  }
+
+  input[type="radio"]:checked::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--wc-accent-fg);
+  }
+
+  input[type="checkbox"]:checked::before {
+    content: "E73E";
+    color: var(--wc-accent-fg);
+    font-family: var(--wc-font-icons);
+    font-size: var(--wc-icon-sm);
+    line-height: 1;
+  }
+
+  input[type="radio"]:disabled,
+  input[type="checkbox"]:disabled {
+    opacity: 0.5;
+  }
+}

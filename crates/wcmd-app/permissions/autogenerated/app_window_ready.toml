@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-app-window-ready"
+description = "Enables the app_window_ready command without any pre-configured scope."
+commands.allow = ["app_window_ready"]
+
+[[permission]]
+identifier = "deny-app-window-ready"
+description = "Denies the app_window_ready command without any pre-configured scope."
+commands.deny = ["app_window_ready"]

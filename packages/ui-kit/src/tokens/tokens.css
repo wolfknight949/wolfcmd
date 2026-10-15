@@ -1,0 +1,403 @@
+/*
+ * Design tokens. Themes override tokens only; components never hardcode values.
+ * N-01: WolfCmd's look, calm and warm: a warm neutral ramp of our own, soft rounded shapes,
+ * diffuse shadows, monochrome-first chrome with one sparing accent, simple line icons. The dark
+ * theme is the default; the light block below applies under `data-theme="light"` (set from the
+ * theme setting: Dark, Light or Auto). Every text/background pair keeps WCAG AA contrast
+ * (`tokens/contrast.test.ts`).
+ */
+:root {
+  color-scheme: dark;
+
+  /* The warm neutral ramp (dark), after the Claude desktop app's dark colors: the window
+     and the gaps between blocks, the blocks, raised things; ivory text. Never pure black. */
+  --wc-bg-subtle: #1f1e1d;
+  --wc-bg: #262624;
+  --wc-bg-elevated: #30302e;
+  --wc-fg: #faf9f5;
+  --wc-fg-muted: #c2c0b6;
+  /* Text: a third, quieter level below `fg-muted` (hints, placeholders, meta), as quiet as
+     4.5:1 on the elevated surface allows. */
+  --wc-fg-subtle: #9c9a92;
+  --wc-fg-disabled: color-mix(in srgb, var(--wc-fg) 38%, transparent);
+  --wc-danger: #f2786b;
+  --wc-warning: #d6a64a;
+  --wc-success: #5fb37a;
+  /* A danger button (Remove, Discard): a deeper red than the danger text, so its light label
+     reads at 4.5:1. */
+  --wc-danger-fill: #b8392d;
+  --wc-danger-fill-hover: #a63326;
+  --wc-danger-fill-fg: #fffaf6;
+  /* The window's close button under the pointer (the per-OS caption buttons). */
+  --wc-caption-close: #c42b1c;
+  --wc-caption-close-pressed: color-mix(in srgb, var(--wc-caption-close) 85%, transparent);
+  --wc-caption-close-fg: #ffffff;
+
+  /* Overlays: menus, flyouts and dialogs are opaque, one step above the blocks (terminal text
+     never shows through), with a thin quiet border. Tooltips are inverted-quiet: a raised chip. */
+  --wc-flyout-bg: #30302e;
+  --wc-dialog-bg: #2b2a28;
+  --wc-surface-border: color-mix(in srgb, var(--wc-fg) 11%, transparent);
+  --wc-divider: color-mix(in srgb, var(--wc-fg) 8%, transparent);
+  --wc-tooltip-bg: #3d3c39;
+  --wc-tooltip-fg: #faf9f5;
+
+  /* N-01: the accent, WolfCmd's own light blue with a touch of violet (periwinkle), used
+     sparingly: the primary button (dark text on it here), focus, selection, the focused block.
+     One token; everything accent-colored derives from it. */
+  --wc-accent: #9aa3f2;
+  --wc-accent-fg: #171828;
+  --wc-focus-ring: #9aa3f2;
+
+  /* Controls. Friendly buttons: a filled primary (the accent), a quiet secondary (a soft neutral
+     fill, no border) and a ghost tertiary. Fields are recessed with a thin border. */
+  --wc-button-bg: color-mix(in srgb, var(--wc-fg) 9%, transparent);
+  --wc-button-hover: color-mix(in srgb, var(--wc-fg) 13%, transparent);
+  --wc-button-pressed: color-mix(in srgb, var(--wc-fg) 7%, transparent);
+  --wc-input-bg: #1a1917;
+  --wc-input-border: color-mix(in srgb, var(--wc-fg) 13%, transparent);
+  --wc-input-border-hover: color-mix(in srgb, var(--wc-fg) 22%, transparent);
+  --wc-accent-disabled: color-mix(in srgb, var(--wc-fg) 12%, transparent);
+  --wc-accent-fg-disabled: color-mix(in srgb, var(--wc-fg) 45%, transparent);
+
+  /* The only see-through colors components use.
+     Mixed from the theme colors, so they follow light and dark by themselves. Components never
+     write their own opacity (`bg-fg/10`), so the same thing looks the same everywhere. */
+  /* Neutral fills: a quiet area (code, a well, zebra rows), hover, pressed, and a strong fill (a
+     selected row, a chip, a key cap). */
+  --wc-fill-quiet: color-mix(in srgb, var(--wc-fg) 4%, transparent);
+  --wc-fill-hover: color-mix(in srgb, var(--wc-fg) 7%, transparent);
+  --wc-fill-pressed: color-mix(in srgb, var(--wc-fg) 5%, transparent);
+  --wc-fill-strong: color-mix(in srgb, var(--wc-fg) 11%, transparent);
+  /* Lines: borders, rings and dividers; strong for an outline that must be seen (an empty slot,
+     a drop zone). */
+  --wc-line: color-mix(in srgb, var(--wc-fg) 8%, transparent);
+  --wc-line-strong: color-mix(in srgb, var(--wc-fg) 22%, transparent);
+  /* Tints: a background in the accent or a status color, a stronger one, a line in it. */
+  --wc-accent-tint: color-mix(in srgb, var(--wc-accent) 13%, transparent);
+  --wc-accent-line: color-mix(in srgb, var(--wc-accent) 50%, transparent);
+  --wc-warning-tint: color-mix(in srgb, var(--wc-warning) 12%, transparent);
+  --wc-warning-line: color-mix(in srgb, var(--wc-warning) 45%, transparent);
+  /* Lines on an accent fill. */
+  --wc-accent-fg-tint: color-mix(in srgb, var(--wc-accent-fg) 22%, transparent);
+  /* Derived from the accent: hover (lighter here, darker in the light theme) and pressed. */
+  --wc-accent-hover: color-mix(in srgb, var(--wc-accent) 86%, #ffffff);
+  --wc-accent-pressed: color-mix(in srgb, var(--wc-accent) 80%, transparent);
+  /* N-01: the focused block's border: the accent, the one sign of where the keyboard is. */
+  --wc-block-focus: var(--wc-accent);
+  /* The dimmed layer behind a dialog. */
+  --wc-scrim: rgb(10 8 6 / 0.45);
+
+  /* Workspace colors, cycled as workspaces are created: small dots only (the switcher, an
+     agent's dot). */
+  --wc-workspace-1: #4c8dff;
+  --wc-workspace-2: #3fb950;
+  --wc-workspace-3: #d29922;
+  --wc-workspace-4: #db61a2;
+  --wc-workspace-5: #39c5cf;
+  --wc-workspace-6: #a371f7;
+  --wc-workspace-7: #f0883e;
+  --wc-workspace-8: #8b949e;
+
+  /* Terminal palette, separate from UI colors: VS Code's Dark Modern terminal scheme
+     (`DARK_MODERN` in packages/app/src/terminal/theme.ts, which a test keeps equal to these).
+     Hex only: the terminal mixes them (selection, agent tint). */
+  --wc-term-fg: #cccccc;
+  --wc-term-bg: #262624;
+  --wc-term-cursor: #aeafad;
+  --wc-term-selection: #264f78;
+  --wc-term-0: #000000;
+  --wc-term-1: #cd3131;
+  --wc-term-2: #0dbc79;
+  --wc-term-3: #e5e510;
+  --wc-term-4: #2472c8;
+  --wc-term-5: #bc3fbc;
+  --wc-term-6: #11a8cd;
+  --wc-term-7: #e5e5e5;
+  --wc-term-8: #666666;
+  --wc-term-9: #f14c4c;
+  --wc-term-10: #23d18b;
+  --wc-term-11: #f5f543;
+  --wc-term-12: #3b8eea;
+  --wc-term-13: #d670d6;
+  --wc-term-14: #29b8db;
+  --wc-term-15: #e5e5e5;
+  /* Breathing room around the terminal grid (compact spacing halves it). */
+  --wc-term-pad-x: 12px;
+  --wc-term-pad-y: 8px;
+  /* How much of the agent's color an agent panel's background takes, and its edge. */
+  --wc-agent-tint: 0.012;
+  --wc-agent-edge: 0.35;
+
+  --wc-space-1: 4px;
+  --wc-space-2: 8px;
+  --wc-space-3: 12px;
+  --wc-space-4: 16px;
+  --wc-space-5: 20px;
+  --wc-space-6: 24px;
+  --wc-space-7: 28px;
+  --wc-space-8: 32px;
+
+  /* Chrome sizes, which the compact density (below) shrinks in small windows. Components
+     use these through `h-(--wc-titlebar-h)`-style utilities, never fixed values. The tab strip
+     and the block headers stay compact: the terminals get the room. */
+  --wc-titlebar-h: 40px;
+  --wc-tab-h: 28px;
+  /* N-03: a tab pill's width (pills shrink to `--wc-tab-min-w` when the title bar is full). */
+  --wc-tab-w: 128px;
+  --wc-tab-min-w: 64px;
+  --wc-header-h: 32px;
+  /* N-06: the bar on the window's right edge (Agents, later plugins' buttons): its width, a
+     button's width, and whether a button shows its name under its icon. */
+  --wc-widgetbar-w: 56px;
+  --wc-widget-w: 48px;
+  --wc-widget-label: block;
+  /* The window's caption buttons (minimize, maximize, close) on Windows and Linux, and on macOS
+     the room the native traffic lights take at the title bar's start. */
+  --wc-caption-w: 46px;
+  --wc-traffic-lights-w: 76px;
+  /* The gap between blocks (also the divider's hit area). The layout needs it as a number, so
+     packages/app/src/panels/TabView.tsx reads this token (it is the one place the size lives). */
+  --wc-panel-gap: 8px;
+  /* Controls: the height of a field, a standard button and a picker, and of a small one. */
+  --wc-control-h: 32px;
+  --wc-control-h-sm: 26px;
+  /* Menus: padding inside the surface, rows, their sides and the gap to the icon column. */
+  --wc-menu-pad: 6px;
+  --wc-menu-item-h: 30px;
+  --wc-menu-item-px: 10px;
+  --wc-menu-gap: 10px;
+  --wc-menu-icon: 16px;
+  --wc-menu-sep-my: 6px;
+  --wc-menu-min-w: 224px;
+  /* Tooltips (TooltipHost): 12 px text, at most 320 px wide. */
+  --wc-tooltip-max-w: 320px;
+  --wc-tooltip-px: 10px;
+  --wc-tooltip-py: 6px;
+  /* Dialogs: padding around the content and the buttons, and the widths. */
+  --wc-dialog-pad: 24px;
+  --wc-dialog-max-w: 520px;
+  /* N-07: the toggle (track and knob) and a NumberBox's box. */
+  --wc-toggle-w: 34px;
+  --wc-toggle-h: 20px;
+  --wc-toggle-knob: 14px;
+  --wc-numberbox-w: 64px;
+  /* N-07: a dialog of settings rows, and the width of a field or picker in such a row. */
+  --wc-dialog-wide-max-w: 640px;
+  --wc-field-w: 200px;
+  /* In-panel overlays (the find bar, the paste question): inside the panel with a margin. */
+  --wc-findbar-max-w: calc(100% - 1.5rem);
+  --wc-panel-overlay-max-h: calc(100% - 3rem);
+
+  /* Soft shapes: controls (buttons, fields, pills), and overlays and blocks (menus, flyouts,
+     dialogs, panel cards). Rows inside a menu take their own, between the two. */
+  --wc-radius-control: 8px;
+  --wc-radius-overlay: 12px;
+  --wc-radius-item: 6px;
+  /* Slim scrollbars (base.css): a rounded thumb that shows while its scroller is hovered. */
+  --wc-scrollbar-size: 10px;
+  --wc-scrollbar-inset: 2px;
+  --wc-scrollbar-min: 32px;
+  --wc-scrollbar-thumb: color-mix(in srgb, var(--wc-fg) 20%, transparent);
+  --wc-scrollbar-thumb-hover: color-mix(in srgb, var(--wc-fg) 34%, transparent);
+
+  /* One style on every OS: the system UI font (Segoe UI on Windows, the San Francisco system font
+     on macOS, the desktop's sans on Linux) and the system monospace fonts; icons use the font
+     the app ships. */
+  --wc-font-ui:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Ubuntu, Cantarell,
+    "Helvetica Neue", sans-serif;
+  --wc-font-mono:
+    "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, "SF Mono", Menlo, "DejaVu Sans Mono",
+    "Liberation Mono", monospace;
+  /* WolfCmd Icons (fonts/wolfcmd-icons.woff2, @font-face in styles.css), never a system
+     icon font. */
+  --wc-font-icons: "WolfCmd Icons";
+  /* The type scale (12 / 13 / 14 / 15 / 16 / 20, each with its line height): 13 px is the UI's
+     base, 12 px the floor. The only sizes allowed. */
+  --wc-text-xs: 12px;
+  --wc-text-xs-leading: 16px;
+  --wc-text-sm: 13px;
+  --wc-text-sm-leading: 18px;
+  --wc-text-md: 14px;
+  --wc-text-md-leading: 20px;
+  --wc-text-base: 15px;
+  --wc-text-base-leading: 22px;
+  --wc-text-heading: 16px;
+  --wc-text-heading-leading: 24px;
+  --wc-text-lg: 20px;
+  --wc-text-lg-leading: 28px;
+  /* Icon glyph sizes (WolfCmd Icons). 12 px is the floor, except `xs` (10 px), which is
+     only for the window caption buttons and check marks inside a small box. */
+  --wc-icon-xs: 10px;
+  --wc-icon-sm: 12px;
+  --wc-icon-md: 16px;
+  --wc-icon-lg: 20px;
+  --wc-icon-xl: 24px;
+  /* Weights: regular 400 (`font-normal`), medium 500 (`font-medium`), semibold 600
+     (`font-semibold`). No bold, no light. */
+
+  /* Soft, diffuse shadows: tooltips, flyouts and menus, dialogs. */
+  --wc-shadow-tooltip: 0 4px 12px rgb(0 0 0 / 0.3);
+  --wc-shadow-flyout: 0 12px 32px rgb(0 0 0 / 0.36), 0 2px 6px rgb(0 0 0 / 0.2);
+  --wc-shadow-dialog: 0 24px 64px rgb(0 0 0 / 0.45), 0 4px 12px rgb(0 0 0 / 0.2);
+
+  --wc-dur-fast: 100ms;
+  --wc-dur-normal: 160ms;
+  --wc-dur-slow: 240ms;
+  --wc-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --wc-ease-in-out: cubic-bezier(0.6, 0, 0.3, 1);
+  /* How long the pointer rests on a thin target (a divider) before it lights up, so
+     passing over it doesn't flicker. Not motion, so reduced motion keeps it. */
+  --wc-delay-hover: 300ms;
+  /* N-03: a dragged panel steps back to this opacity; a dragged tab pill lifts by this scale. */
+  --wc-drag-dim: 0.55;
+  --wc-lift-scale: 1.04;
+  /* N-01: a pressed control settles to this scale (icon buttons, pills, segments) and a wide one
+     (a text button) a little less; something that appears (a dialog, a new panel, a tab pill)
+     grows from this scale as it fades in. */
+  --wc-press-scale: 0.96;
+  --wc-press-scale-wide: 0.98;
+  --wc-enter-scale: 0.97;
+  /* Flyouts and menus drift this far from their anchor as they fade in. */
+  --wc-flyout-slide: 4px;
+  --wc-flyout-rise: calc(-1 * var(--wc-flyout-slide));
+  /* How long the pointer (or keyboard focus) rests before a tooltip shows, and the
+     shorter wait when moving on from a tooltip just shown. Not motion: reduced motion keeps
+     them. */
+  --wc-delay-tooltip: 600ms;
+  --wc-delay-tooltip-next: 100ms;
+  /* N-06: an agent finished while the user wasn't looking: its tab pill glows once in the
+     agent's color (`--wc-glow-agent`, set inline by the app with `data-agent`), else in this one,
+     for this long (zero under reduced motion: only the done mark shows). */
+  --wc-glow: var(--wc-accent);
+  --wc-glow-agent: var(--wc-glow);
+  /* The touch of warmth in the pill glow's halo. */
+  --wc-glow-warm: #f0b184;
+  --wc-dur-glow: 1200ms;
+  /* N-06: the finish reward: a soft light along the finished agent's panel, inside its rounded
+     edge, only in the agent's color (set inline by the app; else a quiet neutral) and a lighter,
+     luminous tint of it (the agent's color mixed toward the lift color, keeping this much of
+     it); how deep the haze reaches in, the bright line on the edge, the haze's strength and how
+     long it plays (zero under reduced motion: no glow). */
+  --wc-finish-glow-agent: var(--wc-fg-muted);
+  --wc-finish-glow-lift: #fff;
+  --wc-finish-glow-tint-mix: 45%;
+  --wc-finish-glow-w: 18px;
+  --wc-finish-glow-line: 1.5px;
+  --wc-finish-glow-strength: 0.55;
+  --wc-dur-finish-glow: 2800ms;
+  /* N-06: a gentle sine-like curve for slow, breathing motion (the finish glow). */
+  --wc-ease-gentle: cubic-bezier(0.37, 0, 0.63, 1);
+  /* N-06: one turn of a busy spinner (zero under reduced motion: the arc stands still). */
+  --wc-dur-spin: 900ms;
+}
+
+/* N-01: the light theme. `main.tsx` sets `data-theme` on <html> from the theme setting (Auto: the
+   system's light or dark mode, followed live), so the look never depends on what the web view
+   reports by itself. A warm off-white ramp, never pure white. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --wc-bg-subtle: #f0ede7;
+  --wc-bg: #f7f5f1;
+  --wc-bg-elevated: #fcfbf9;
+  --wc-fg: #2a2723;
+  --wc-fg-muted: #5d584f;
+  --wc-fg-subtle: #6d685f;
+  --wc-danger: #b83a2c;
+  --wc-warning: #85570a;
+  --wc-success: #2f7a45;
+  /* The workspace colors, deep enough to read on the light chrome (3:1). */
+  --wc-workspace-1: #0969da;
+  --wc-workspace-2: #1a7f37;
+  --wc-workspace-3: #9a6700;
+  --wc-workspace-4: #bf3989;
+  --wc-workspace-5: #1b7c83;
+  --wc-workspace-6: #8250df;
+  --wc-workspace-7: #bc4c00;
+  --wc-workspace-8: #6e7781;
+  --wc-danger-fill: #b83a2c;
+  --wc-danger-fill-hover: #a3311f;
+  /* The accent deeper here, where it carries text, a fill or the focus ring. */
+  --wc-accent: #4f5bc8;
+  --wc-accent-fg: #fbfbff;
+  --wc-focus-ring: #4f5bc8;
+  --wc-accent-hover: color-mix(in srgb, var(--wc-accent) 86%, #000000);
+
+  --wc-flyout-bg: #fbfaf8;
+  --wc-dialog-bg: #fbfaf8;
+  --wc-surface-border: color-mix(in srgb, var(--wc-fg) 12%, transparent);
+  --wc-tooltip-bg: #34312c;
+  --wc-tooltip-fg: #f5f2ec;
+  --wc-button-bg: color-mix(in srgb, var(--wc-fg) 7%, transparent);
+  --wc-button-hover: color-mix(in srgb, var(--wc-fg) 11%, transparent);
+  --wc-button-pressed: color-mix(in srgb, var(--wc-fg) 5%, transparent);
+  --wc-input-bg: #fdfcfa;
+  --wc-input-border: color-mix(in srgb, var(--wc-fg) 16%, transparent);
+  --wc-input-border-hover: color-mix(in srgb, var(--wc-fg) 28%, transparent);
+  --wc-line: color-mix(in srgb, var(--wc-fg) 10%, transparent);
+  --wc-line-strong: color-mix(in srgb, var(--wc-fg) 24%, transparent);
+  --wc-scrim: rgb(42 36 28 / 0.22);
+  --wc-shadow-tooltip: 0 4px 12px rgb(40 30 20 / 0.16);
+  --wc-shadow-flyout: 0 12px 32px rgb(40 30 20 / 0.12), 0 2px 6px rgb(40 30 20 / 0.06);
+  --wc-shadow-dialog: 0 24px 64px rgb(40 30 20 / 0.18), 0 4px 12px rgb(40 30 20 / 0.06);
+
+  /* The light terminal scheme (`LIGHT` in packages/app/src/terminal/theme.ts). */
+  --wc-term-fg: #2b2f36;
+  --wc-term-bg: #fbfbfc;
+  --wc-term-cursor: #3b6fd8;
+  --wc-term-selection: #cfdcf7;
+  --wc-term-0: #2b2f36;
+  --wc-term-1: #c4314b;
+  --wc-term-2: #2f7d32;
+  --wc-term-3: #8a6100;
+  --wc-term-4: #2f5fc4;
+  --wc-term-5: #8a3fb3;
+  --wc-term-6: #127a87;
+  --wc-term-7: #e4e6ea;
+  --wc-term-8: #6b7280;
+  --wc-term-9: #d9465d;
+  --wc-term-10: #3c9441;
+  --wc-term-11: #a07400;
+  --wc-term-12: #4274d8;
+  --wc-term-13: #9d55c4;
+  --wc-term-14: #1a8d9b;
+  --wc-term-15: #ffffff;
+  --wc-agent-tint: 0.02;
+  /* The pill glow's warmth, deeper on the light chrome. */
+  --wc-glow-warm: #dc8248;
+  /* The finish reward on the light chrome: a tint closer to the (deeper) agent color, so it
+     still reads on a light block, and a stronger haze. */
+  --wc-finish-glow-tint-mix: 65%;
+  --wc-finish-glow-strength: 0.7;
+}
+
+/* The compact density, set on <html> by packages/app/src/chrome/density.ts when the
+   window is narrower than 1280 CSS px. It tightens the chrome only; the terminal's font size and
+   spacing stay the user's setting. */
+:root[data-density="compact"] {
+  --wc-titlebar-h: 34px;
+  --wc-tab-h: 24px;
+  --wc-tab-w: 120px;
+  --wc-header-h: 28px;
+  --wc-widgetbar-w: 40px;
+  --wc-widget-w: 34px;
+  /* Icons only: the buttons keep their name as tooltip and accessible label. */
+  --wc-widget-label: none;
+  --wc-panel-gap: 6px;
+  /* Tighter menus and dialogs in a small window. */
+  --wc-menu-item-h: 28px;
+  --wc-dialog-pad: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wc-dur-fast: 0ms;
+    --wc-dur-normal: 0ms;
+    --wc-dur-slow: 0ms;
+    --wc-dur-glow: 0ms;
+    --wc-dur-finish-glow: 0ms;
+    --wc-dur-spin: 0ms;
+  }
+}
