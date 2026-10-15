@@ -103,7 +103,7 @@
      (`DARK_MODERN` in packages/app/src/terminal/theme.ts, which a test keeps equal to these).
      Hex only: the terminal mixes them (selection, agent tint). */
   --wc-term-fg: #cccccc;
-  --wc-term-bg: #1f1f1f;
+  --wc-term-bg: #141414;
   --wc-term-cursor: #aeafad;
   --wc-term-selection: #264f78;
   --wc-term-0: #000000;
