@@ -43,6 +43,7 @@ Most of the time you work with one agent in one or two terminals. WolfCmd is mad
 - **Sessions resumed after a restart.** An agent panel picks up its own session where it left off; an agent you ended stays a plain shell.
 - **Working and finished indicators.** See which agent is busy on the panel and its tab; a finish you didn't see makes the tab and the panel glow once in the agent's color, and with the window in the background the taskbar flashes and an optional notification names the agent.
 - **Git worktrees per workspace.** Work on separate tasks in one repository: create a worktree from the workspace menu, empty or with copies of the main tree's tabs, switch between them and remove them.
+- **Undo for layout changes, and no lost agents.** Closed a panel or a tab by mistake? Ctrl+Shift+Z brings it back with its shell or agent still running, screen and all; Ctrl+Shift+Y redoes. Closing a running agent asks first.
 - **Crash-safe saving and session restore.** Every change is saved at once; workspaces, splits, folders, window position and scrollback come back after a restart, a crash or a power cut.
 - **A good terminal.** ConPTY with PowerShell, Command Prompt, Git Bash and WSL; WebGL rendering; find (case, regex, one command's output); Ctrl+click links to URLs and `file:line:col`; command marks you can jump between; a guard for multi-line pastes; images pasted straight into agents; files dropped from Explorer as quoted paths.
 - **Plugins that add agents.** Drop a folder with a small `plugin.toml` into the data folder and your own agent CLI shows up in the Agents menu ([guide](docs/guides/plugins.md)). Plugins declare data only; WolfCmd never runs plugin code.
@@ -80,7 +81,8 @@ WolfCmd needs Windows 10 or 11 with the Microsoft Edge WebView2 runtime (part of
 | Alt+Shift+= / Alt+Shift+- | Split right / split down |
 | Alt+Arrow keys | Move the focus to the neighbouring panel |
 | Ctrl+Shift+Enter | Maximize the panel / show the tiles again |
-| Ctrl+Shift+W | Close the panel |
+| Ctrl+Shift+W | Close the panel (a running agent asks first) |
+| Ctrl+Shift+Z / Ctrl+Shift+Y | Undo / redo a layout or workspace change (closing, splitting, moving, renaming…) |
 | Ctrl+Shift+N | New workspace |
 | Ctrl+Shift+F | Find in the terminal |
 | Ctrl+Up / Ctrl+Down | Jump to the previous / next command |
