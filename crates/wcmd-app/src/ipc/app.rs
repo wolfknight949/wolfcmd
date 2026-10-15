@@ -107,6 +107,11 @@ pub(crate) struct WindowHidden {
     pub(crate) tray: bool,
 }
 
+/// N-11: the tray's Quit while an agent runs (and `window.confirm_close` is on): the window
+/// shows and the page asks, as for Ctrl+Q, then quits through `app_quit` (`crate::tray`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, tauri_specta::Event)]
+pub(crate) struct QuitRequested {}
+
 /// N-01: Ctrl+Q (Cmd+Q on macOS): the real quit, like the tray's Quit (`crate::tray::quit`).
 #[tauri::command]
 #[specta::specta]

@@ -130,6 +130,9 @@ pub struct WindowSettings {
     pub close_to_tray: bool,
     /// The one hint about the tray ("still running in the tray") was shown; never again.
     pub tray_hint_shown: bool,
+    /// N-11: closing a panel, tab or workspace with a running agent (or a running command in a
+    /// shell with integration), and quitting with a running agent, asks first. Off: never asks.
+    pub confirm_close: bool,
 }
 
 impl Default for WindowSettings {
@@ -137,6 +140,7 @@ impl Default for WindowSettings {
         Self {
             close_to_tray: true,
             tray_hint_shown: false,
+            confirm_close: true,
         }
     }
 }
@@ -412,6 +416,22 @@ mod tests {
         let loaded = file.load().settings.window;
         assert!(loaded.close_to_tray);
         assert!(loaded.tray_hint_shown);
+    }
+
+    #[test]
+    fn n11_confirm_close_defaults_on_and_round_trips() {
+        assert!(Settings::default().window.confirm_close);
+        let dir = temp_dir("confirm-close");
+        let file = SettingsFile::in_dir(&dir);
+        // A file from before the setting: closing what runs asks.
+        std::fs::write(file.path(), "[window]\nclose_to_tray = false\n").unwrap();
+        let loaded = file.load().settings;
+        assert!(loaded.window.confirm_close);
+        assert!(!loaded.window.close_to_tray);
+        let mut settings = loaded;
+        settings.window.confirm_close = false;
+        file.save(&settings).unwrap();
+        assert_eq!(file.load().settings, settings);
     }
 
     #[test]

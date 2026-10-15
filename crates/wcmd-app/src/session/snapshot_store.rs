@@ -29,6 +29,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use super::undo_grace::UndoGrace;
 use crate::state::StateService;
 
 /// The folder in the data folder.
@@ -105,9 +106,14 @@ impl SnapshotStore {
         }
     }
 
-    /// The app's store: in `data_dir`, with the rules of the workspace document, read-only
+    /// The app's store: in `data_dir`, with the rules of the workspace document (N-11: and the
+    /// closed panels waiting for an undo, which keep saving their scrollback), read-only
     /// while the state is.
-    pub(crate) fn for_app(data_dir: &Path, state: &Arc<StateService>) -> Self {
+    pub(crate) fn for_app(
+        data_dir: &Path,
+        state: &Arc<StateService>,
+        grace: Arc<UndoGrace>,
+    ) -> Self {
         let check = Arc::clone(state);
         Self::new(
             data_dir,
@@ -115,7 +121,7 @@ impl SnapshotStore {
             // The startup cleanup trusts only a document that was really read. N-03: it keeps the
             // files of every panel, of any kind (a kind this WolfCmd doesn't know may own one).
             (!state.is_fallback()).then(|| state.panel_ids()),
-            Box::new(move |block: &str| check.has_panel(block)),
+            Box::new(move |block: &str| check.has_panel(block) || grace.holds(block)),
         )
     }
 
@@ -196,6 +202,12 @@ impl SnapshotStore {
         let snapshot = self.load(block_id)?;
         let shown = wcmd_term::snapshot::restored(&snapshot.body, &label(snapshot.saved_at));
         (!shown.is_empty()).then_some(shown)
+    }
+
+    /// N-11: a closed panel's session ended after its undo grace: when an undo brings the panel
+    /// back, its new session restores the snapshot once more.
+    pub(crate) fn restore_again(&self, block_id: &str) {
+        lock(&self.restored).remove(block_id);
     }
 
     /// The UI page (re)loaded: a panel whose shell ended meanwhile starts a new one, which

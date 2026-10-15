@@ -9,12 +9,14 @@ mod input_order;
 mod local;
 mod snapshot_store;
 mod types;
+mod undo_grace;
 
 pub(crate) use local::{ActivitySink, LocalSessionHost, TitlePatterns};
 pub(crate) use snapshot_store::{SnapshotStore, WallClock};
 pub(crate) use types::{
     ProfileInfo, PtyAckArgs, PtyDetachArgs, PtyOpenArgs, PtyOpenResult, PtyResizeArgs, PtyWriteArgs,
 };
+pub(crate) use undo_grace::UndoGrace;
 
 /// What a session reports to its view, in order: output chunks (with folder changes after the
 /// chunk that reported them), then exactly one exit.

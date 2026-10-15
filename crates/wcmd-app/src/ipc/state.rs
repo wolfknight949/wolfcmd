@@ -4,6 +4,7 @@
 
 use std::collections::HashSet;
 use std::sync::Arc;
+use std::time::Instant;
 
 use serde::Serialize;
 use specta::Type;
@@ -48,7 +49,9 @@ pub(crate) async fn state_load(
 }
 
 /// Every change the UI makes. Returns at once; the writer thread saves it. N-02: a terminal panel
-/// that left the document was closed, so its session ends (a page reload never ends one).
+/// that left the document was closed, so its session ends (a page reload never ends one); N-11
+/// unless `undoable` names it: the panels the UI's undo history can still bring back keep their
+/// sessions for the undo grace (`session/undo_grace.rs`).
 /// `seq` numbers the page's saves from 1: invokes may run in any order, and an older document
 /// must never land over a newer one (nor end the session of a panel the newer one added).
 #[tauri::command]
@@ -58,19 +61,23 @@ pub(crate) async fn state_save(
     host: State<'_, Host>,
     seq: u32,
     document: Document,
+    undoable: Vec<String>,
 ) -> Result<(), WcmdError> {
-    save_and_end_closed(&state, &host, seq, document);
+    let undoable: HashSet<String> = undoable.into_iter().collect();
+    save_and_end_closed(&state, &host, seq, document, &undoable);
     Ok(())
 }
 
 /// Saves `document` (unless a newer one, by `seq`, was saved already) and ends the sessions of
-/// the terminal panels it no longer has (N-03: only terminals have sessions). Saves are
-/// serialized here, so the panels compared are those of the document saved just before.
+/// the terminal panels it no longer has (N-03: only terminals have sessions; N-11: those in
+/// `undoable` wait for an undo instead). Saves are serialized here, so the panels compared are
+/// those of the document saved just before.
 fn save_and_end_closed(
     state: &StateService,
     host: &LocalSessionHost,
     seq: u32,
     document: Document,
+    undoable: &HashSet<String>,
 ) {
     let mut last = state.save_order();
     if seq <= *last {
@@ -86,7 +93,12 @@ fn save_and_end_closed(
     state.save(document);
     let after = state.terminal_ids();
     let closed: HashSet<String> = before.difference(&after).cloned().collect();
-    host.kill_panels(&closed);
+    host.close_panels(
+        &closed,
+        |panel| after.contains(panel),
+        undoable,
+        Instant::now(),
+    );
 }
 
 #[cfg(all(test, windows))]
@@ -132,7 +144,13 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let state = StateService::open(&dir);
         let host = LocalSessionHost::new(ShellIntegration::disabled());
-        save_and_end_closed(&state, &host, 1, document(&["kept", "closed"]));
+        save_and_end_closed(
+            &state,
+            &host,
+            1,
+            document(&["kept", "closed"]),
+            &HashSet::new(),
+        );
         let open = |panel: &str| {
             let (tx, rx) = mpsc::channel();
             let args = PtyOpenArgs {
@@ -149,7 +167,7 @@ mod tests {
         let kept = open("kept");
         let closed = open("closed");
 
-        save_and_end_closed(&state, &host, 2, document(&["kept"]));
+        save_and_end_closed(&state, &host, 2, document(&["kept"]), &HashSet::new());
         let ended = closed
             .iter()
             .find(|e| matches!(e, SessionEvent::Exited { .. }));
@@ -160,6 +178,56 @@ mod tests {
                 .try_iter()
                 .any(|e| matches!(e, SessionEvent::Exited { .. }))
         );
+        host.kill_all();
+        state.flush();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// N-11: a closed panel the undo history holds keeps its session; an undo brings it back
+    /// into the document with the same session; once the history drops it, it ends.
+    #[test]
+    fn n11_a_closed_panel_waits_for_an_undo_until_the_history_drops_it() {
+        let dir = std::env::temp_dir().join(format!("wcmd-ipc-undo-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let state = StateService::open(&dir);
+        let host = LocalSessionHost::new(ShellIntegration::disabled());
+        let none = HashSet::new();
+        let held = HashSet::from(["closed".to_owned()]);
+        save_and_end_closed(&state, &host, 1, document(&["kept", "closed"]), &none);
+        let (tx, events) = mpsc::channel();
+        let args = PtyOpenArgs {
+            request_id: "closed".to_owned(),
+            size: PtySize { cols: 80, rows: 24 },
+            cwd: None,
+            profile_id: Some("cmd".to_owned()),
+            panel_id: Some("closed".to_owned()),
+        };
+        host.open(args, Box::new(move |e| tx.send(e).is_ok()))
+            .expect("open");
+        let exited = |wait: Duration| {
+            events
+                .recv_timeout(wait)
+                .into_iter()
+                .chain(events.try_iter())
+                .any(|e| matches!(e, SessionEvent::Exited { .. }))
+        };
+
+        save_and_end_closed(&state, &host, 2, document(&["kept"]), &held);
+        assert!(!exited(Duration::from_millis(300)));
+        // Undo: the panel is back, its session running on.
+        save_and_end_closed(&state, &host, 3, document(&["kept", "closed"]), &none);
+        assert!(!exited(Duration::from_millis(100)));
+        // Closed again, then the history lets it go (a new step cleared the redo).
+        save_and_end_closed(&state, &host, 4, document(&["kept"]), &held);
+        assert!(!exited(Duration::from_millis(100)));
+        save_and_end_closed(&state, &host, 5, document(&["kept"]), &none);
+        let deadline = std::time::Instant::now() + Duration::from_secs(30);
+        while !exited(Duration::from_millis(100)) {
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the session never ended"
+            );
+        }
         host.kill_all();
         state.flush();
         let _ = std::fs::remove_dir_all(&dir);
@@ -179,13 +247,13 @@ mod tests {
             ids.sort();
             ids
         };
-        save_and_end_closed(&state, &host, 1, document(&["a"]));
-        save_and_end_closed(&state, &host, 3, document(&["a", "split"]));
-        save_and_end_closed(&state, &host, 2, document(&["a"]));
+        save_and_end_closed(&state, &host, 1, document(&["a"]), &HashSet::new());
+        save_and_end_closed(&state, &host, 3, document(&["a", "split"]), &HashSet::new());
+        save_and_end_closed(&state, &host, 2, document(&["a"]), &HashSet::new());
         assert_eq!(panels(&state), ["a", "split"]);
 
         state.page_loading();
-        save_and_end_closed(&state, &host, 1, document(&["a"]));
+        save_and_end_closed(&state, &host, 1, document(&["a"]), &HashSet::new());
         assert_eq!(panels(&state), ["a"]);
         state.flush();
         let _ = std::fs::remove_dir_all(&dir);
