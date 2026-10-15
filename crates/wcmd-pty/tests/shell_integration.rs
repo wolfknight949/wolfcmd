@@ -35,14 +35,22 @@ struct Session {
 
 impl Session {
     fn wait_for(&mut self, needle: &str) -> usize {
+        self.wait_for_any(&[needle]).0
+    }
+
+    /// Waits until one of `needles` appears; returns where, and which.
+    fn wait_for_any<'a>(&mut self, needles: &[&'a str]) -> (usize, &'a str) {
         let deadline = Instant::now() + TIMEOUT;
         loop {
-            if let Some(at) = self.output.find(needle) {
-                return at;
+            if let Some(found) = needles
+                .iter()
+                .find_map(|needle| self.output.find(needle).map(|at| (at, *needle)))
+            {
+                return found;
             }
             let left = deadline.saturating_duration_since(Instant::now());
             let chunk = self.rx.recv_timeout(left).unwrap_or_else(|_| {
-                panic!("timed out waiting for {needle:?}; got {:?}", self.output)
+                panic!("timed out waiting for {needles:?}; got {:?}", self.output)
             });
             let text = String::from_utf8_lossy(&chunk);
             if text.contains("\x1b[6n") {
@@ -61,11 +69,19 @@ impl Session {
     }
 }
 
-/// A fresh folder with a space and a percent sign, to check how paths are encoded.
+/// A fresh folder with a space and a percent sign, to check how paths are encoded. Its full
+/// path: a temp folder named in 8.3 form (`C:\Users\RUNNER~1\…` on CI machines) is expanded,
+/// as the shells report the full name.
 fn work_dir(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("wcmd n02 100% {name} {}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("creating the test folder");
-    dir
+    let full = std::fs::canonicalize(&dir).expect("the test folder's full path");
+    // `canonicalize` gives a verbatim path (`\\?\C:\…`); shells report the plain form.
+    let plain = full
+        .to_string_lossy()
+        .trim_start_matches(r"\\?\")
+        .to_owned();
+    PathBuf::from(plain)
 }
 
 fn start(id: &str, dir: &Path) -> Option<Session> {
@@ -146,8 +162,16 @@ fn git_bash_reports_folder_and_command_marks() {
     let c = shell.wait_for("\x1b]133;C\x07");
     let d = shell.wait_for("\x1b]133;D;3\x07");
     assert!(c < d, "command start before command end");
-    // Login shell semantics: /etc/profile ran (Git sets MSYSTEM there).
+    // Login shell semantics: /etc/profile ran (Git sets MSYSTEM there). Git for Windows starts
+    // in one of its standard environments (MINGW64 by default, UCRT64 or CLANG64 on some
+    // installs); the typed line itself shows only `$MSYSTEM`.
     shell.type_line("echo \"msystem=$MSYSTEM\"");
-    shell.wait_for("msystem=MINGW64");
+    shell.wait_for_any(&[
+        "msystem=MINGW64",
+        "msystem=UCRT64",
+        "msystem=CLANG64",
+        "msystem=CLANGARM64",
+        "msystem=MINGW32",
+    ]);
     let _ = std::fs::remove_dir_all(&dir);
 }
