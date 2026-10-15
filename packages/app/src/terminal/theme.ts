@@ -139,7 +139,7 @@ export const DARK_MODERN: TerminalScheme = {
   name: "Dark Modern",
   foreground: "#cccccc",
   // The block's background (the app's dark surface): the terminal sits in its card seamlessly.
-  background: "#262624",
+  background: "#1f1f1f",
   cursor: "#aeafad",
   selection: "#264f78",
   ansi: [

@@ -9,16 +9,16 @@
 :root {
   color-scheme: dark;
 
-  /* The warm neutral ramp (dark), after the Claude desktop app's dark colors: the window
-     and the gaps between blocks, the blocks, raised things; ivory text. Never pure black. */
-  --wc-bg-subtle: #1f1e1d;
-  --wc-bg: #262624;
-  --wc-bg-elevated: #30302e;
-  --wc-fg: #faf9f5;
-  --wc-fg-muted: #c2c0b6;
+  /* The neutral ramp (dark), after VS Code's Dark Modern: the window and the gaps between
+     blocks, the blocks and terminals, raised things; soft grey text. Never pure black. */
+  --wc-bg-subtle: #181818;
+  --wc-bg: #1f1f1f;
+  --wc-bg-elevated: #2a2a2a;
+  --wc-fg: #cccccc;
+  --wc-fg-muted: #a6a6a6;
   /* Text: a third, quieter level below `fg-muted` (hints, placeholders, meta), as quiet as
      4.5:1 on the elevated surface allows. */
-  --wc-fg-subtle: #9c9a92;
+  --wc-fg-subtle: #949494;
   --wc-fg-disabled: color-mix(in srgb, var(--wc-fg) 38%, transparent);
   --wc-danger: #f2786b;
   --wc-warning: #d6a64a;
@@ -35,12 +35,12 @@
 
   /* Overlays: menus, flyouts and dialogs are opaque, one step above the blocks (terminal text
      never shows through), with a thin quiet border. Tooltips are inverted-quiet: a raised chip. */
-  --wc-flyout-bg: #30302e;
-  --wc-dialog-bg: #2b2a28;
+  --wc-flyout-bg: #2a2a2a;
+  --wc-dialog-bg: #232323;
   --wc-surface-border: color-mix(in srgb, var(--wc-fg) 11%, transparent);
   --wc-divider: color-mix(in srgb, var(--wc-fg) 8%, transparent);
-  --wc-tooltip-bg: #3d3c39;
-  --wc-tooltip-fg: #faf9f5;
+  --wc-tooltip-bg: #333333;
+  --wc-tooltip-fg: #e8e8e8;
 
   /* N-01: the accent, WolfCmd's own light blue with a touch of violet (periwinkle), used
      sparingly: the primary button (dark text on it here), focus, selection, the focused block.
@@ -103,7 +103,7 @@
      (`DARK_MODERN` in packages/app/src/terminal/theme.ts, which a test keeps equal to these).
      Hex only: the terminal mixes them (selection, agent tint). */
   --wc-term-fg: #cccccc;
-  --wc-term-bg: #262624;
+  --wc-term-bg: #1f1f1f;
   --wc-term-cursor: #aeafad;
   --wc-term-selection: #264f78;
   --wc-term-0: #000000;

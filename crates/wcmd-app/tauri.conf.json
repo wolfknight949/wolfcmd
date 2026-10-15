@@ -25,7 +25,7 @@
         "focus": false,
         "decorations": false,
         "shadow": true,
-        "backgroundColor": "#1f1e1d",
+        "backgroundColor": "#181818",
         "zoomHotkeysEnabled": false,
         "dragDropEnabled": true
       }

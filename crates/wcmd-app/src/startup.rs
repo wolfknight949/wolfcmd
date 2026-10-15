@@ -27,7 +27,7 @@ pub(crate) fn since_start_ms() -> u64 {
 }
 
 /// `--wc-bg-subtle` in the dark theme (also `backgroundColor` in `tauri.conf.json`).
-pub(crate) const DARK_BACKGROUND: Color = Color(0x1f, 0x1e, 0x1d, 0xff);
+pub(crate) const DARK_BACKGROUND: Color = Color(0x18, 0x18, 0x18, 0xff);
 /// `--wc-bg-subtle` in the light theme.
 pub(crate) const LIGHT_BACKGROUND: Color = Color(0xf0, 0xed, 0xe7, 0xff);
 
