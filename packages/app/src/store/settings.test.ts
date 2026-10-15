@@ -12,10 +12,15 @@ describe("N-07 settings store", () => {
   });
 
   it("n01_complete: closing hides to the tray by default, the hint not shown yet", () => {
-    expect(complete({}).window).toEqual({ close_to_tray: true, tray_hint_shown: false });
+    expect(complete({}).window).toEqual({
+      close_to_tray: true,
+      tray_hint_shown: false,
+      confirm_close: true,
+    });
     expect(complete({ window: { close_to_tray: false } }).window).toEqual({
       close_to_tray: false,
       tray_hint_shown: false,
+      confirm_close: true,
     });
   });
 

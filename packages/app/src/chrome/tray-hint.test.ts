@@ -37,7 +37,9 @@ describe("N-01 the tray hint", () => {
     expect(settings.getState().window.tray_hint_shown).toBe(true);
     await settings.saved();
     expect(save).toHaveBeenCalledWith(
-      expect.objectContaining({ window: { close_to_tray: true, tray_hint_shown: true } }),
+      expect.objectContaining({
+        window: { close_to_tray: true, tray_hint_shown: true, confirm_close: true },
+      }),
     );
     // Closed by the user; the window hides again: never again.
     dismissTrayHint();

@@ -1,9 +1,9 @@
 // N-03: the keyboard shortcuts (tabs: Ctrl+Shift+T, Ctrl+Shift+D duplicate, Ctrl+Tab,
 // Ctrl+Alt+1…9; panels: Alt+Shift+=/-, Alt+arrows, Ctrl+Shift+W, Ctrl+Shift+Enter maximize;
-// Ctrl+Shift+N new workspace; Ctrl+=/- font; N-07 Ctrl+, Settings; N-01 Ctrl+Q quits; Shift+F10
-// and the Menu key: the focused object's context menu). Capture phase, so they work while a terminal has the keyboard;
-// every other key goes to the terminal untouched. Cmd on macOS where these say Ctrl+Shift
-// (`primaryModifier`).
+// Ctrl+Shift+N new workspace; Ctrl+=/- font; N-07 Ctrl+, Settings; N-01 Ctrl+Q quits; N-11
+// Ctrl+Shift+Z undo, Ctrl+Shift+Y redo; Shift+F10 and the Menu key: the focused object's context
+// menu). Capture phase, so they work while a terminal has the keyboard; every other key goes to
+// the terminal untouched. Cmd on macOS where these say Ctrl+Shift (`primaryModifier`).
 import {
   chordLetter,
   isApple,
@@ -78,6 +78,15 @@ export function shortcutFor(event: KeyboardEvent, host: KeyHost): (() => void) |
       : () => {
           actions.duplicateTab(tab);
         };
+  }
+  // N-11: undo and redo of layout and workspace changes. Never Ctrl+Z / Ctrl+Y: those are the
+  // terminal's (Ctrl+Z suspends a job in a shell; editors in a terminal undo with them).
+  if (primary && shift && !alt && (letter === "Z" || letter === "Y")) {
+    const undo = letter === "Z";
+    return () => {
+      if (undo) actions.undo();
+      else actions.redo();
+    };
   }
   if (ctrl && !alt && event.key === "Tab") {
     return () => {

@@ -49,10 +49,13 @@ export function onStateHealth(listener: () => void): () => void {
 /** This page's saves, numbered from 1: the core drops an older document that comes late. */
 let saves = 0;
 
-/** Every change: the core saves it at once, crash-safe (the newest wins). */
-export function saveState(document: Document): void {
+/**
+ * Every change: the core saves it at once, crash-safe (the newest wins). N-11: `undoable` names
+ * the closed panels an undo can still bring back; their sessions keep running a while.
+ */
+export function saveState(document: Document, undoable: readonly string[]): void {
   saves += 1;
-  report(commands.stateSave(saves, document), "save workspaces");
+  report(commands.stateSave(saves, document, [...undoable]), "save workspaces");
 }
 
 export async function loadSettings(): Promise<Settings> {

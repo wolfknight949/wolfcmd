@@ -87,3 +87,13 @@ export function onWindowHidden(listener: (tray: boolean) => void): () => void {
     });
   };
 }
+
+/**
+ * N-11: the tray's Quit while an agent runs: the window is shown and the page asks, as for
+ * Ctrl+Q. Listens for the page's life.
+ */
+export function onQuitRequested(listener: () => void): void {
+  void events.quitRequested.listen(() => {
+    listener();
+  });
+}

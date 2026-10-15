@@ -349,10 +349,13 @@ export function TabView({
           onDrop={(splitId, ratios) => {
             setDrag(undefined);
             if (ratios === undefined) return;
-            store.apply((d) =>
-              updateTab(d, shown.tab.id, (t) =>
-                t.layout == null ? t : { ...t, layout: setRatios(t.layout, splitId, ratios) },
-              ),
+            // N-11: one undo step per drag (quick drags of one divider are one).
+            store.apply(
+              (d) =>
+                updateTab(d, shown.tab.id, (t) =>
+                  t.layout == null ? t : { ...t, layout: setRatios(t.layout, splitId, ratios) },
+                ),
+              { label: "resize", group: `resize:${splitId}` },
             );
           }}
         />

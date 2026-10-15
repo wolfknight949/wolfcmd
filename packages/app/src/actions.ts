@@ -1,10 +1,22 @@
 // Everything the user can do, in one place: the title bar, panel headers and keys call these.
-// Each is a pure document change (`model/`) applied by the store, which saves it.
-import type { AgentInfo, Panel, PanelContent } from "@wolfcmd/bindings";
+// Each is a pure document change (`model/`) applied by the store, which saves it. N-11: layout
+// and workspace changes are undoable steps (named for the Undo and Redo tooltips); every close
+// (a panel, tabs, a workspace, the quit) goes through `guarded`, which asks first while an
+// agent or a command still runs there.
+import type { AgentInfo, Panel, PanelContent, Tab } from "@wolfcmd/bindings";
 
+import { askToClose, type CloseAnswer } from "./chrome/close-question";
+import { noticeText, showUndoNotice } from "./chrome/undo-notice";
 import { openLink, pickFolder } from "./core/app";
 import { addWorktree, readRepository, removeWorktree } from "./core/git";
 import { quitApp } from "./core/window";
+import {
+  type Closing,
+  type CloseQuestion,
+  closeQuestion,
+  runningIn,
+  type RunningProbe,
+} from "./model/close-rules";
 import {
   activateTab,
   activateTabNumber,
@@ -24,6 +36,7 @@ import {
   duplicateTab,
   focusPanel,
   mainOf,
+  maximizedPanel,
   moveTab,
   openPanel,
   renamePanel,
@@ -34,11 +47,23 @@ import {
   workspacePanels,
 } from "./model/document";
 import type { Zone } from "./model/drop";
-import { type Arrow, hasPanel, neighbor, panelsOf, type Rect, type Side } from "./model/layout";
+import type { Step } from "./model/history";
+import {
+  type Arrow,
+  hasPanel,
+  neighbor,
+  type PanelLeaf,
+  panelsOf,
+  type Rect,
+  type Side,
+} from "./model/layout";
 import { agentOf, panelFolder, terminalPanel } from "./model/panels";
 import { flipFolder } from "./model/remote-control";
+import { working } from "./store/activity";
 import { freshAgents } from "./store/agent-starts";
-import { type SettingsStore, stepFontSize } from "./store/settings";
+import { catalog } from "./store/catalog";
+import { commandRuns } from "./store/commands";
+import { changed, type SettingsStore, stepFontSize } from "./store/settings";
 import type { WorkspaceStore } from "./store/workspaces";
 
 const newId = () => crypto.randomUUID();
@@ -86,7 +111,14 @@ export interface Actions {
   /** N-03: shows a workspace's folder in the file manager (the core opens it). */
   revealFolder(folder: string): void;
   fontSize(step: 1 | -1): void;
-  /** N-01: quits WolfCmd for real (Ctrl+Q): the core saves and ends every terminal. */
+  /** N-11: undoes the newest layout or workspace change (a notice when it is off screen). */
+  undo(): void;
+  /** N-11: does the newest undone change again. */
+  redo(): void;
+  /**
+   * N-01: quits WolfCmd for real (Ctrl+Q, N-11 the tray's Quit): the core saves and ends every
+   * terminal. N-11: asks first while an agent runs.
+   */
   quit(): void;
   /** N-10: a new git worktree of main workspace `mainId`'s repository, shown in its own workspace. */
   newWorktree(mainId: string, request: WorktreeRequest): Promise<void>;
@@ -106,7 +138,25 @@ export interface WorktreeRequest {
   readonly copyFrom: string | null;
 }
 
-export function createActions(store: WorkspaceStore, settings: SettingsStore): Actions {
+/** N-11: how a close learns what runs and asks the user (the dialog; tests answer themselves). */
+export interface CloseAsking extends RunningProbe {
+  readonly ask: (question: CloseQuestion) => Promise<CloseAnswer>;
+  /** An agent's name by its registry ID. */
+  readonly agentName: (agentId: string) => string;
+}
+
+const APP_ASKING: CloseAsking = {
+  working,
+  commandRuns,
+  ask: askToClose,
+  agentName: (id) => catalog.getState().agents.find((a) => a.id === id)?.name ?? id,
+};
+
+export function createActions(
+  store: WorkspaceStore,
+  settings: SettingsStore,
+  asking: CloseAsking = APP_ASKING,
+): Actions {
   const doc = () => store.getState().document;
   const shownTab = () => activeTab(activeWorkspace(doc()));
   /** A new terminal starts in the focused terminal's folder, else the workspace's. */
@@ -131,9 +181,46 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
       }
     }
   };
-  const place = (panel: Panel, side: Side = "right") => {
-    store.apply((d) => openPanel(d, panel, side, newId));
+  /** N-11: a new panel splits the shown tab's focused one, or fills the empty tab. */
+  const placeStep = (side: Side, label?: string): Step => ({
+    label: label ?? (shownTab()?.layout == null ? "new terminal" : `split ${side}`),
+  });
+  const place = (panel: Panel, side: Side = "right", label?: string) => {
+    const step = placeStep(side, label);
+    store.apply((d) => openPanel(d, panel, side, newId), step);
   };
+  const tabsWhere = (keep: (index: number, at: number) => boolean, tabId: string) => {
+    const owner = doc().workspaces.find((w) => w.tabs.some((t) => t.id === tabId));
+    if (owner === undefined) return [];
+    const at = owner.tabs.findIndex((t) => t.id === tabId);
+    return owner.tabs.filter((_, index) => !keep(index, at));
+  };
+  const panelsIn = (tabs: readonly Tab[]) =>
+    tabs.flatMap((t) => (t.layout == null ? [] : panelsOf(t.layout)));
+  /**
+   * N-11: runs `close` at once when nothing in `panels` runs (or the user turned the question
+   * off); otherwise asks first and closes only on Close. "Don't ask again" turns it off.
+   */
+  const guarded = (
+    panels: readonly PanelLeaf[],
+    closing: Closing,
+    close: () => void,
+    count?: number,
+  ) => {
+    const question = settings.getState().window.confirm_close
+      ? closeQuestion(closing, runningIn(panels, asking), asking.agentName, count)
+      : undefined;
+    if (question === undefined) {
+      close();
+      return;
+    }
+    void asking.ask(question).then((answer) => {
+      if (!answer.close) return;
+      if (answer.dontAsk) settings.apply((s) => changed(s, "window", { confirm_close: false }));
+      close();
+    });
+  };
+  const allPanels = () => doc().workspaces.flatMap(workspacePanels);
 
   return {
     newTerminal(side, profile) {
@@ -154,10 +241,18 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
       const session = agent.takesSessionId ? crypto.randomUUID() : null;
       const cwd = startFolder();
       // N-06: the folder is corrected to where the shell really is when the agent starts.
-      place(terminalPanel(id, { cwd, agent: { agent: agent.id, session, cwd, running: true } }));
+      place(
+        terminalPanel(id, { cwd, agent: { agent: agent.id, session, cwd, running: true } }),
+        "right",
+        `open ${agent.name}`,
+      );
     },
     closePanel(panelId) {
-      store.apply((d) => closePanel(d, panelId));
+      const panel = allPanels().find((p) => p.id === panelId);
+      if (panel === undefined) return;
+      guarded([panel], "panel", () => {
+        store.apply((d) => closePanel(d, panelId), { label: "close panel" });
+      });
     },
     focusPanel(panelId) {
       store.apply((d) => focusPanel(d, panelId));
@@ -167,13 +262,21 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
       this.newTerminal(side);
     },
     toggleMaximize(panelId) {
-      store.apply((d) => toggleMaximize(d, panelId));
+      const tab = doc()
+        .workspaces.flatMap((w) => w.tabs)
+        .find((t) => t.layout != null && hasPanel(t.layout, panelId));
+      const label = maximizedPanel(tab) === panelId ? "restore tiles" : "maximize panel";
+      store.apply((d) => toggleMaximize(d, panelId), { label });
     },
     renamePanel(panelId, name) {
-      store.apply((d) => renamePanel(d, panelId, name));
+      store.apply((d) => renamePanel(d, panelId, name), {
+        label: "rename panel",
+        group: `rename:${panelId}`,
+      });
     },
     dropPanel(panelId, targetId, zone) {
-      store.apply((d) => dropPanel(d, panelId, targetId, zone, newId));
+      const label = zone === "center" ? "swap panels" : "move panel";
+      store.apply((d) => dropPanel(d, panelId, targetId, zone, newId), { label });
     },
     focusNeighbor(arrow, panels) {
       const tab = shownTab();
@@ -182,26 +285,48 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
       if (target !== undefined) this.focusPanel(target);
     },
     newTab() {
-      store.apply((d) => addTab(d, newId));
+      store.apply((d) => addTab(d, newId), { label: "new tab" });
     },
     closeTab(tabId) {
-      store.apply((d) => closeTab(d, tabId, newId));
+      const tabs = tabsWhere((index, at) => index !== at, tabId);
+      guarded(panelsIn(tabs), "tab", () => {
+        store.apply((d) => closeTab(d, tabId, newId), { label: "close tab" });
+      });
     },
     duplicateTab(tabId) {
       let copied: readonly string[] = [];
-      store.apply((d) => {
-        const { document, panels } = duplicateTab(d, tabId, newId);
-        copied = panels;
-        return document;
-      });
+      store.apply(
+        (d) => {
+          const { document, panels } = duplicateTab(d, tabId, newId);
+          copied = panels;
+          return document;
+        },
+        { label: "duplicate tab" },
+      );
       // N-06: copied agent panels start new sessions of their own.
       markFresh(copied);
     },
     closeOtherTabs(tabId) {
-      store.apply((d) => closeOtherTabs(d, tabId));
+      const tabs = tabsWhere((index, at) => index === at, tabId);
+      guarded(
+        panelsIn(tabs),
+        tabs.length === 1 ? "tab" : "tabs",
+        () => {
+          store.apply((d) => closeOtherTabs(d, tabId), { label: "close other tabs" });
+        },
+        tabs.length,
+      );
     },
     closeTabsToRight(tabId) {
-      store.apply((d) => closeTabsToRight(d, tabId));
+      const tabs = tabsWhere((index, at) => index <= at, tabId);
+      guarded(
+        panelsIn(tabs),
+        tabs.length === 1 ? "tab" : "tabs",
+        () => {
+          store.apply((d) => closeTabsToRight(d, tabId), { label: "close tabs to the right" });
+        },
+        tabs.length,
+      );
     },
     activateTab(tabId) {
       store.apply((d) => activateTab(d, tabId));
@@ -213,13 +338,16 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
       store.apply((d) => cycleTab(d, step));
     },
     moveTab(tabId, to) {
-      store.apply((d) => moveTab(d, tabId, to));
+      store.apply((d) => moveTab(d, tabId, to), { label: "move tab" });
     },
     renameTab(tabId, name) {
-      store.apply((d) => updateTab(d, tabId, (t) => ({ ...t, name: name.trim() })));
+      store.apply((d) => updateTab(d, tabId, (t) => ({ ...t, name: name.trim() })), {
+        label: "rename tab",
+        group: `rename:${tabId}`,
+      });
     },
     newWorkspace() {
-      store.apply((d) => createWorkspace(d, null, newId));
+      store.apply((d) => createWorkspace(d, null, newId), { label: "new workspace" });
     },
     async openFolder() {
       const folder = await pickFolder(
@@ -228,18 +356,24 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
       );
       if (folder === null) return;
       const known = workspaceForFolder(doc(), folder);
-      store.apply((d) =>
-        known === undefined ? createWorkspace(d, folder, newId) : activateWorkspace(d, known.id),
-      );
+      if (known !== undefined) store.apply((d) => activateWorkspace(d, known.id));
+      else store.apply((d) => createWorkspace(d, folder, newId), { label: "open folder" });
     },
     activateWorkspace(id) {
       store.apply((d) => activateWorkspace(d, id));
     },
     closeWorkspace(id) {
-      store.apply((d) => closeWorkspace(d, id, newId));
+      const workspace = doc().workspaces.find((w) => w.id === id);
+      if (workspace === undefined) return;
+      guarded(workspacePanels(workspace), "workspace", () => {
+        store.apply((d) => closeWorkspace(d, id, newId), { label: "close workspace" });
+      });
     },
     renameWorkspace(id, name) {
-      store.apply((d) => updateWorkspace(d, id, (w) => ({ ...w, name: name.trim() })));
+      store.apply((d) => updateWorkspace(d, id, (w) => ({ ...w, name: name.trim() })), {
+        label: "rename workspace",
+        group: `rename:${id}`,
+      });
     },
     toggleRemoteControl(folder) {
       settings.apply((s) => ({
@@ -254,41 +388,60 @@ export function createActions(store: WorkspaceStore, settings: SettingsStore): A
     fontSize(step) {
       settings.apply((s) => stepFontSize(s, step));
     },
+    undo() {
+      const moved = store.undo();
+      if (moved?.offscreen === true) showUndoNotice(noticeText(moved.label, true));
+    },
+    redo() {
+      const moved = store.redo();
+      if (moved?.offscreen === true) showUndoNotice(noticeText(moved.label, false));
+    },
     quit() {
-      // The settings and the document are saved first (the core flushes what it has).
-      void settings.saved().then(quitApp);
+      guarded(allPanels(), "quit", () => {
+        // The settings and the document are saved first (the core flushes what it has).
+        void settings.saved().then(quitApp);
+      });
     },
     async newWorktree(mainId, request) {
       const folder = doc().workspaces.find((w) => w.id === mainId)?.folder;
       if (folder == null) return;
       const path = await addWorktree(folder, request.branch, request.newBranch, request.path);
       let copied: readonly string[] = [];
-      store.apply((d) => {
-        const made = createWorktreeWorkspace(
-          d,
-          mainId,
-          path,
-          request.branch.trim(),
-          request.copyFrom,
-          newId,
-        );
-        copied = made.panels;
-        return made.document;
-      });
+      // N-11: undo closes the workspace only; the git worktree stays (the menu lists it).
+      store.apply(
+        (d) => {
+          const made = createWorktreeWorkspace(
+            d,
+            mainId,
+            path,
+            request.branch.trim(),
+            request.copyFrom,
+            newId,
+          );
+          copied = made.panels;
+          return made.document;
+        },
+        { label: "new worktree" },
+      );
       // N-06: copied agent panels start new sessions of their own (only the ones just copied:
       // the main workspace may have closed while git worked, and then nothing was).
       markFresh(copied);
       void readRepository(folder).catch(() => undefined);
     },
     openWorktree(mainId, path, branch) {
-      store.apply((d) => createWorktreeWorkspace(d, mainId, path, branch, null, newId).document);
+      store.apply((d) => createWorktreeWorkspace(d, mainId, path, branch, null, newId).document, {
+        label: "open worktree",
+      });
     },
     async removeWorktree(id, force) {
       const workspace = doc().workspaces.find((w) => w.id === id);
       const main = workspace === undefined ? undefined : mainOf(doc(), workspace);
       if (workspace?.folder == null || main === undefined) return;
-      const panels = workspacePanels(workspace).map((p) => p.id);
+      // N-11: closed panels waiting for an undo may stand in the folder too: they end with it,
+      // and nothing before the removal can be undone.
+      const panels = [...workspacePanels(workspace).map((p) => p.id), ...store.undoable()];
       await removeWorktree(workspace.folder, force, panels);
+      store.forget();
       store.apply((d) =>
         closeWorkspace(d.active === id ? activateWorkspace(d, main.id) : d, id, newId),
       );

@@ -131,3 +131,8 @@ export function groupMark(
     finishedAt: latest?.finishedAt,
   };
 }
+
+/** N-11: whether the panel's agent works right now (closing it asks first). */
+export function working(panelId: string): boolean {
+  return activity.getState()[panelId]?.state === "working";
+}
