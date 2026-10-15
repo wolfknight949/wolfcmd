@@ -75,6 +75,11 @@ impl SettingsService {
         self.current().settings.window.close_to_tray
     }
 
+    /// N-11: whether quitting with a running agent asks first (asked at each tray Quit).
+    pub(crate) fn confirm_close(&self) -> bool {
+        self.current().settings.window.confirm_close
+    }
+
     /// Applies `settings` (normalized) to this run and saves them. In a read-only run they
     /// apply but the file is left as it is, and the error says why.
     pub(crate) fn save(&self, settings: Settings) -> Result<Settings, WcmdError> {

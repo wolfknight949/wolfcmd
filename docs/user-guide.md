@@ -29,7 +29,7 @@ A tab is a set of **tiled panels**, each one a terminal.
 - **Resize:** drag the gap between two panels.
 - **Move:** drag a panel's header onto another panel. Dropping near an edge splits that panel there; dropping in the middle swaps the two. The shell keeps running; Esc cancels.
 - **Maximize:** the header's button, a double-click on the header, or Ctrl+Shift+Enter. The other panels keep running out of sight; the same again brings the tiles back. A maximized panel stays maximized after a restart.
-- **Close:** the header's × or Ctrl+Shift+W.
+- **Close:** the header's × or Ctrl+Shift+W. A panel where an agent (or a command) is still running asks first; see [Undo and closing safely](#undo-and-closing-safely).
 - **Rename:** the header's menu (right-click it). A panel otherwise shows the running program's title, the agent's name or the shell's name.
 
 ### In a terminal
@@ -42,6 +42,14 @@ A tab is a set of **tiled panels**, each one a terminal.
 - **Files from Explorer:** drop them on a terminal to type their quoted paths (in the right form for the shell, WSL included).
 - **Images:** paste a picture into an agent panel and the agent receives it.
 - **Font size:** Ctrl+= / Ctrl+-.
+
+## Undo and closing safely
+
+- **Undo and redo:** Ctrl+Shift+Z undoes the last layout or workspace change and Ctrl+Shift+Y redoes it; the two arrows next to the workspace name do the same, and their tooltips say what they would undo or redo ("Undo close panel"). Ctrl+Z and Ctrl+Y stay the terminal's (Ctrl+Z suspends a program in a shell, and editors in a terminal use both).
+- **What can be undone:** closing a panel, a tab or a workspace; opening a panel, a tab or a workspace (an agent, a split, a duplicated tab, a new worktree's workspace: undoing that never deletes the worktree itself); moving, swapping, maximizing and resizing panels; renaming; reordering tabs. Up to 100 steps, for as long as WolfCmd runs. Removing a git worktree can't be undone.
+- **Closed terminals come back alive:** a closed panel's shell or agent keeps running for a minute, so undoing the close brings it back exactly as it was, still running. After that minute an undo still brings the panel back, as a restart would: its earlier output dimmed above a new shell, and an agent that was running resumes its session.
+- If the change you undo happened in another tab or workspace, you stay where you are and a small notice says what was undone.
+- **The close question:** closing a panel, a tab or a workspace where an agent is still running, or a command in a shell (one with shell integration, at work rather than at its prompt), asks first: "Close this panel? Claude Code is still running in it." Cancel has the focus, so Enter or Esc keeps everything. Quitting (Ctrl+Q, the tray's Quit) asks once while an agent runs; closing the window to the tray never asks, since nothing stops. Tick "Don't ask again" to turn the question off, and turn it back on in Settings › Window.
 
 ## Agents
 
@@ -86,7 +94,7 @@ Open **Settings** with the gear at the bottom of the right bar, Ctrl+, or the wo
 - **Appearance:** theme (Dark, Light, or Auto to follow Windows), font and size, cursor style, smooth scrolling, and whether a finished agent's panel glows.
 - **Terminal:** the default shell; the Kitty keyboard protocol (off by default, for programs that use it).
 - **Agents:** Remote Control by default; notify when an agent finishes.
-- **Window:** keep running in the tray when closed.
+- **Window:** keep running in the tray when closed; ask before closing a running agent.
 - **About:** the version and the data folder, with a button to open it.
 
 Settings are stored in `settings.toml` in the data folder.
@@ -99,7 +107,7 @@ How to write one: [Writing a plugin agent](guides/plugins.md).
 
 ## The tray
 
-Closing the window (its ×, Alt+F4) hides WolfCmd to the tray: terminals and agents keep running, finish notifications still arrive. Click the tray icon to bring the window back; its right-click menu has **Show WolfCmd** and **Quit WolfCmd**. **Ctrl+Q** quits from the window. To have the × quit instead, turn off Settings › Window › Keep running in the tray when closed. Starting WolfCmd again while it is in the tray shows the hidden window.
+Closing the window (its ×, Alt+F4) hides WolfCmd to the tray: terminals and agents keep running, finish notifications still arrive. Click the tray icon to bring the window back; its right-click menu has **Show WolfCmd** and **Quit WolfCmd**. **Ctrl+Q** quits from the window (both Quits ask first while an agent is running). To have the × quit instead, turn off Settings › Window › Keep running in the tray when closed. Starting WolfCmd again while it is in the tray shows the hidden window.
 
 ## Where your data lives
 

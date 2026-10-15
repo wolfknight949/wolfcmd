@@ -23,6 +23,7 @@ import { answerWatchdog, followWindowBackground, windowReady } from "./core/app"
 import { listProfiles } from "./core/profiles";
 import { loadSettings, loadState, saveSettings, saveState } from "./core/state";
 import {
+  onQuitRequested,
   onWindowHidden,
   setWindowTheme,
   showSystemMenu,
@@ -123,6 +124,10 @@ const finishGlow = createFinishGlow({
   allowed: () => settings.getState().appearance.finish_glow && !reduceMotion.matches,
 });
 installAgentActivity(store, actions, window, finishGlow);
+// N-11: the tray's Quit while an agent runs asks here, as Ctrl+Q does.
+onQuitRequested(() => {
+  actions.quit();
+});
 // N-01: the first time closing the window hides it to the tray, one calm hint for its return.
 installTrayHint(settings, onWindowHidden);
 // The live titles of panels that left the document go too.

@@ -24,7 +24,7 @@ pub use error::{ErrorKind, WcmdError};
 pub use ipc::{BINDINGS_PATH, export_bindings, specta_builder};
 
 use crate::ipc::pty::Host;
-use crate::session::{LocalSessionHost, SnapshotStore};
+use crate::session::{LocalSessionHost, SnapshotStore, UndoGrace};
 use crate::state::StateService;
 use crate::watchdog::Watchdog;
 use crate::window_bounds::RestoreMaximized;
@@ -156,7 +156,8 @@ pub fn run() -> anyhow::Result<()> {
 }
 
 /// The terminals' host: shell integration, scrollback kept under the data folder, the terminal
-/// panels the document has (N-03: a session whose panel is no terminal there ends), (N-06) the
+/// panels the document has (N-03: a session whose panel is no terminal there ends; N-11 unless
+/// an undo can still bring the panel back), (N-06) the
 /// agents' working titles and (N-07) the default shell setting.
 fn session_host(
     dir: &std::path::Path,
@@ -167,9 +168,12 @@ fn session_host(
     let integration = wcmd_pty::ShellIntegration::install(&dir.join("shell-integration"));
     let panels = Arc::clone(state);
     let settings = Arc::clone(settings);
+    // N-11: closed panels an undo can bring back keep their sessions and scrollback a while.
+    let grace = Arc::new(UndoGrace::default());
     Arc::new(
         LocalSessionHost::new(integration)
-            .with_snapshots(SnapshotStore::for_app(dir, state))
+            .with_snapshots(SnapshotStore::for_app(dir, state, Arc::clone(&grace)))
+            .with_undo_grace(grace)
             .with_panels(Box::new(move |panel: &str| panels.has_terminal(panel)))
             .with_title_patterns(ipc::agents::title_patterns(agents))
             .with_default_profile(Box::new(move || settings.default_profile())),

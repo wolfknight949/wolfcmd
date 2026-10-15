@@ -11,15 +11,16 @@
 //! messages too); a second launch, a click on the finish notification, the tray icon and its
 //! Show item bring the window back where it was ([`show`]).
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, PoisonError};
+use std::time::{Duration, Instant};
 
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager as _, WebviewWindow, WindowEvent};
 use tauri_specta::Event as _;
 
-use crate::ipc::app::{WindowHidden, reveal};
+use crate::ipc::app::{QuitRequested, WindowHidden, reveal};
 use crate::ipc::pty::Host;
 use crate::ipc::settings::SettingsService;
 use crate::platform;
@@ -119,7 +120,7 @@ fn tray_icon(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             SHOW_ITEM => show_main(app),
-            QUIT_ITEM => quit(app),
+            QUIT_ITEM => quit_from_tray(app),
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
@@ -191,6 +192,59 @@ pub(crate) fn quit(app: &AppHandle) {
     app.exit(0);
 }
 
+/// N-11: what the tray's Quit does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TrayQuit {
+    /// Quit now.
+    Now,
+    /// Show the window and let the page ask ([`QuitRequested`]), as Ctrl+Q does.
+    Ask,
+}
+
+/// A second tray Quit this soon after the page was asked quits at once (a page that can't
+/// answer never keeps WolfCmd from quitting).
+const ASK_AGAIN_QUITS: Duration = Duration::from_secs(10);
+
+/// N-11: the tray's Quit decision. `confirm`: the `window.confirm_close` setting; `agents`: how
+/// many panels run an agent; `since_asked`: how long ago the page was last asked to.
+pub(crate) fn tray_quit(confirm: bool, agents: usize, since_asked: Option<Duration>) -> TrayQuit {
+    let asked_just_now = since_asked.is_some_and(|since| since < ASK_AGAIN_QUITS);
+    if confirm && agents > 0 && !asked_just_now {
+        TrayQuit::Ask
+    } else {
+        TrayQuit::Now
+    }
+}
+
+/// When the page was last asked to confirm a tray Quit.
+static ASKED: Mutex<Option<Instant>> = Mutex::new(None);
+
+/// N-11: the tray's Quit: with an agent running (and `window.confirm_close` on) the window shows
+/// and the page asks once, as for Ctrl+Q; otherwise, or when asked again right after, it quits.
+fn quit_from_tray(app: &AppHandle) {
+    let confirm = app
+        .try_state::<Arc<SettingsService>>()
+        .is_some_and(|settings| settings.confirm_close());
+    let agents = app
+        .try_state::<Host>()
+        .map_or(0, |host| host.running_agents());
+    let mut asked = ASKED.lock().unwrap_or_else(PoisonError::into_inner);
+    let now = Instant::now();
+    let since = asked.map(|at| now.saturating_duration_since(at));
+    if tray_quit(confirm, agents, since) == TrayQuit::Now {
+        drop(asked);
+        quit(app);
+        return;
+    }
+    *asked = Some(now);
+    drop(asked);
+    show_main(app);
+    if let Err(error) = (QuitRequested {}).emit(app) {
+        tracing::warn!(%error, "N-11: could not ask the page; quitting");
+        quit(app);
+    }
+}
+
 /// The app is ending: a close now lets the window go.
 pub(crate) fn quitting() {
     QUITTING.store(true, Ordering::Relaxed);
@@ -214,6 +268,20 @@ mod tests {
     fn n01_close_quits_when_nothing_could_bring_the_window_back() {
         // No tray on this desktop: hiding would lose the window.
         assert_eq!(decide(Request::Close, true, false), Close::Quit);
+    }
+
+    /// N-11: the tray's Quit asks only while an agent runs and the setting is on; asked again
+    /// right after (a page that can't answer), it quits.
+    #[test]
+    fn n11_the_tray_quit_asks_only_with_a_running_agent() {
+        assert_eq!(tray_quit(true, 1, None), TrayQuit::Ask);
+        assert_eq!(tray_quit(true, 0, None), TrayQuit::Now);
+        assert_eq!(tray_quit(false, 2, None), TrayQuit::Now);
+        assert_eq!(
+            tray_quit(true, 1, Some(Duration::from_secs(2))),
+            TrayQuit::Now
+        );
+        assert_eq!(tray_quit(true, 1, Some(ASK_AGAIN_QUITS)), TrayQuit::Ask);
     }
 
     #[test]

@@ -4,9 +4,11 @@ import { useStore } from "zustand";
 
 import type { Actions } from "./actions";
 import type { BarRegistry } from "./chrome/bar";
+import { CloseDialog } from "./chrome/CloseDialog";
 import { RightBar } from "./chrome/RightBar";
 import { StateNotice } from "./chrome/StateNotice";
 import { TitleBar } from "./chrome/TitleBar";
+import { UndoNotice } from "./chrome/UndoNotice";
 import type { Geometry } from "./model/layout";
 import { TabView } from "./panels/TabView";
 import type { SettingsStore } from "./store/settings";
@@ -26,7 +28,7 @@ export function App({ store, settings, actions, bar, onGeometry }: AppProps) {
   const look = useStore(settings);
   return (
     <div className="flex h-full flex-col bg-bg-subtle">
-      <TitleBar document={doc} actions={actions} settings={look} />
+      <TitleBar document={doc} actions={actions} settings={look} store={store} />
       <StateNotice />
       <div className="flex min-h-0 flex-1">
         <main className="flex min-w-0 flex-1 pb-(--wc-panel-gap) pl-(--wc-panel-gap)">
@@ -40,6 +42,8 @@ export function App({ store, settings, actions, bar, onGeometry }: AppProps) {
         </main>
         <RightBar bar={bar} actions={actions} />
       </div>
+      <UndoNotice />
+      <CloseDialog />
       <TooltipHost />
     </div>
   );

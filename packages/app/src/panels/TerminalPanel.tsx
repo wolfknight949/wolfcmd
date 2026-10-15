@@ -19,6 +19,7 @@ import { remoteControlName } from "../model/remote-control";
 import { agentWorking } from "../store/activity";
 import { continuing, freshAgents } from "../store/agent-starts";
 import { clearAttention, requestAttention, setProgress } from "../store/attention";
+import { commandRunning } from "../store/commands";
 import type { FullSettings } from "../store/settings";
 import { setTitle } from "../store/titles";
 import { dropTarget, dropText } from "../terminal/drop";
@@ -193,6 +194,9 @@ export function TerminalPanel({
           agentWorking(panelId);
         },
         onExit: () => undefined,
+        onCommand: (runs) => {
+          commandRunning(panelId, runs);
+        },
         onAttention: (message) => {
           requestAttention(panelId, message, looking());
         },
@@ -256,6 +260,7 @@ export function TerminalPanel({
     return () => {
       themeWatch.disconnect();
       setDropHandler(panelId, undefined);
+      commandRunning(panelId, false);
       setProgress(panelId, undefined);
       clearAttention(panelId);
       mounted.dispose();

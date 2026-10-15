@@ -18,6 +18,8 @@ export const HINTS = {
   splitDown: "Alt+Shift+-",
   maximize: `${PRIMARY}+Shift+Enter`,
   closePanel: "Ctrl+Shift+W",
+  undo: `${PRIMARY}+Shift+Z`,
+  redo: `${PRIMARY}+Shift+Y`,
   copy: `${PRIMARY}+C`,
   paste: `${PRIMARY}+V`,
   selectAll: `${PRIMARY}+Shift+A`,

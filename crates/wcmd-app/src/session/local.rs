@@ -40,6 +40,7 @@ use super::types::{
     AttachmentId, ProfileInfo, PtyAckArgs, PtyDetachArgs, PtyOpenArgs, PtyOpenResult,
     PtyResizeArgs, PtyWriteArgs, SessionId,
 };
+use super::undo_grace::UndoGrace;
 use super::{EventSink, SessionEvent, batcher};
 use crate::error::{ErrorKind, WcmdError};
 
@@ -218,6 +219,8 @@ pub(crate) struct LocalSessionHost {
     default_choice: Option<DefaultChoice>,
     /// N-01: the window is hidden to the tray ([`Self::set_background`]).
     background: AtomicBool,
+    /// N-11: closed panels whose sessions wait for an undo ([`Self::close_panels`]).
+    grace: Arc<UndoGrace>,
 }
 
 impl std::fmt::Debug for LocalSessionHost {
@@ -330,6 +333,14 @@ impl LocalSessionHost {
         self
     }
 
+    /// N-11: the closed panels waiting for an undo, shared with the scrollback store (their
+    /// scrollback is saved while they wait).
+    #[must_use]
+    pub(crate) fn with_undo_grace(mut self, grace: Arc<UndoGrace>) -> Self {
+        self.grace = grace;
+        self
+    }
+
     /// N-06: agents' `working_title` patterns, looked up by agent id when an agent starts.
     #[must_use]
     pub(crate) fn with_title_patterns(mut self, titles: TitlePatterns) -> Self {
@@ -438,8 +449,15 @@ impl LocalSessionHost {
             .find(|(_, entry)| entry.panel.as_deref() == Some(panel))
     }
 
-    fn is_panel(&self, panel: &str) -> bool {
+    /// Whether `panel` is in the workspace document.
+    fn in_document(&self, panel: &str) -> bool {
         self.panels.as_ref().is_none_or(|check| check(panel))
+    }
+
+    /// Whether `panel`'s session is wanted: its panel is in the document, or N-11 it was closed
+    /// and an undo can still bring it back.
+    fn is_panel(&self, panel: &str) -> bool {
+        self.in_document(panel) || self.grace.holds(panel)
     }
 
     fn new_attachment(&self) -> AttachmentId {
@@ -777,6 +795,33 @@ impl LocalSessionHost {
         Ok(())
     }
 
+    /// N-11: after a save, the panels that left the document (`closed`): those the UI's undo
+    /// history can still bring back (`undoable`) keep their sessions for the undo grace; the
+    /// others end now, as do waiting ones the history dropped. `present`: whether a panel is in
+    /// the document now (one brought back by an undo is simply a panel again).
+    pub(crate) fn close_panels(
+        &self,
+        closed: &HashSet<String>,
+        present: impl Fn(&str) -> bool,
+        undoable: &HashSet<String>,
+        now: Instant,
+    ) {
+        let ending = self.grace.settle(closed, present, undoable, now);
+        self.kill_panels(&ending);
+    }
+
+    /// N-11: how many panels of the document run an agent now (its line typed, not ended). A
+    /// closed panel waiting for an undo doesn't count.
+    pub(crate) fn running_agents(&self) -> usize {
+        self.entries()
+            .iter()
+            .filter(|(_, entry)| {
+                entry.panel.as_deref().is_some_and(|p| self.in_document(p))
+                    && matches!(lock(&entry.vt).agent, AgentWatch::Running { .. })
+            })
+            .count()
+    }
+
     /// N-02: ends the sessions of panels that left the workspace document (closed).
     pub(crate) fn kill_panels(&self, removed: &HashSet<String>) {
         if removed.is_empty() {
@@ -820,8 +865,38 @@ impl LocalSessionHost {
     }
 
     /// N-02: ends the sessions detached for [`ORPHAN_AFTER`] whose panel is not in the
-    /// document (or that have no panel: nobody can attach to them).
+    /// document (or that have no panel: nobody can attach to them). N-11: and those of closed
+    /// panels whose undo grace is over, their scrollback saved first, so a later undo shows it
+    /// above a new shell as a restart would.
     pub(crate) fn sweep(&self, now: Instant) {
+        let expired = self.grace.expired(now);
+        if !expired.is_empty() {
+            if let Some(store) = &self.snapshots {
+                for panel in &expired {
+                    if let Some((_, entry)) = self.session_of(panel) {
+                        stage(store, panel, &entry.vt);
+                    }
+                }
+                store.write_staged();
+            }
+            let released = self.grace.release(&expired, now);
+            if let Some(store) = &self.snapshots {
+                for panel in &released {
+                    store.restore_again(panel);
+                }
+            }
+            let ending: HashSet<String> = released
+                .into_iter()
+                .filter(|panel| !self.is_panel(panel))
+                .collect();
+            if !ending.is_empty() {
+                tracing::info!(
+                    panels = ending.len(),
+                    "N-11: the undo grace is over; ending closed panels' sessions"
+                );
+            }
+            self.kill_panels(&ending);
+        }
         for (id, entry) in self.entries() {
             let orphaned = {
                 let view = lock(&entry.view);
@@ -1570,6 +1645,81 @@ mod tests {
         present.store(false, Ordering::SeqCst);
         host.sweep(detached + ORPHAN_AFTER);
         until(|| !host.running(away.id()));
+    }
+
+    /// N-11: a closed panel an undo can bring back keeps its session through the undo grace (no
+    /// orphan sweep ends it); an undo within it reattaches the same shell with its screen; closed
+    /// again, it ends once the grace is over, its scrollback saved for a later undo.
+    #[test]
+    fn n11_a_closed_panel_survives_the_undo_grace_and_ends_after_it() {
+        use super::super::undo_grace::UNDO_GRACE;
+
+        let present = Arc::new(Mutex::new(HashSet::from(["p".to_owned()])));
+        let check = Arc::clone(&present);
+        let dir = std::env::temp_dir().join(format!("wcmd-n11-grace-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let grace = Arc::new(UndoGrace::default());
+        let kept = Arc::clone(&grace);
+        let doc = Arc::clone(&present);
+        let store = SnapshotStore::new(
+            &dir,
+            true,
+            None,
+            Box::new(move |panel: &str| lock(&doc).contains(panel) || kept.holds(panel)),
+        );
+        let host = cmd_host()
+            .with_snapshots(store)
+            .with_undo_grace(grace)
+            .with_panels(Box::new(move |panel: &str| lock(&check).contains(panel)));
+        let undoable = HashSet::from(["p".to_owned()]);
+        let close = |at: Instant| {
+            lock(&present).remove("p");
+            host.close_panels(&HashSet::from(["p".to_owned()]), |_| false, &undoable, at);
+        };
+
+        let mut view = open(&host, "p", "r1");
+        view.pump(&host, TestView::prompt);
+        view.write(&host, "echo before-close\r");
+        view.pump(&host, |v| v.shows("before-close") && v.prompt());
+        let closed_at = Instant::now();
+        close(closed_at);
+        host.detach_all();
+        // Detached longer than an orphan may be, and still waiting for the undo.
+        host.sweep(closed_at + ORPHAN_AFTER);
+        assert!(host.running(view.id()));
+
+        // Undo within the grace: the panel is back, the same shell reattaches with its screen.
+        lock(&present).insert("p".to_owned());
+        host.close_panels(
+            &HashSet::new(),
+            |panel| panel == "p",
+            &HashSet::new(),
+            closed_at,
+        );
+        let mut back = open(&host, "p", "r2");
+        assert!(back.opened.attached);
+        assert_eq!(back.id(), view.id());
+        back.pump(&host, |v| v.shows("before-close"));
+
+        // Closed again: it ends once the grace is over, not before.
+        let again = Instant::now();
+        close(again);
+        host.detach_all();
+        host.sweep(again + UNDO_GRACE / 2);
+        assert!(host.running(back.id()));
+        host.sweep(again + UNDO_GRACE);
+        until(|| !host.running(back.id()));
+        // What it showed is kept: an undo after the grace shows it above a new shell.
+        lock(&present).insert("p".to_owned());
+        let mut reopened = open(&host, "p", "r3");
+        assert!(!reopened.opened.attached);
+        // (The test view answers the cursor query with the top left, so the new prompt lands
+        // there; xterm.js answers where the cursor really is, below the restored lines.)
+        reopened.pump(&host, |v| {
+            v.shows("before-close") && v.lines().iter().any(|l| l.starts_with("── restored from"))
+        });
+        host.kill_all();
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// N-10: ending a worktree's panels waits until their shells are gone, so the folder they

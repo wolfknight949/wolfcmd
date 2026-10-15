@@ -1,15 +1,17 @@
-// N-01 / N-03 / N-04: the title bar: the workspace switcher, its tabs as pills, and the window
-// controls. Its empty space moves the window (`window-drag.ts`). The Agents button lives in the
-// right bar (`RightBar`). Per OS (`title-bar.ts`): our caption buttons on Windows and Linux,
-// room for the native traffic lights on macOS.
+// N-01 / N-03 / N-04: the title bar: the workspace switcher, N-11 Undo and Redo, its tabs as
+// pills, and the window controls. Its empty space moves the window (`window-drag.ts`). The Agents
+// button lives in the right bar (`RightBar`). Per OS (`title-bar.ts`): our caption buttons on
+// Windows and Linux, room for the native traffic lights on macOS.
 import type { Document } from "@wolfcmd/bindings";
 import { cn } from "@wolfcmd/ui-kit";
 
 import type { Actions } from "../actions";
 import { activeWorkspace } from "../model/document";
 import type { FullSettings } from "../store/settings";
+import type { WorkspaceStore } from "../store/workspaces";
 import { TabPills } from "./TabPills";
 import { titleBarLayout } from "./title-bar";
+import { UndoButtons } from "./UndoButtons";
 import { DRAG_CLASS } from "./window-drag";
 import { WindowControls } from "./WindowControls";
 import { WorkspaceMenu } from "./WorkspaceMenu";
@@ -18,11 +20,13 @@ export interface TitleBarProps {
   readonly document: Document;
   readonly actions: Actions;
   readonly settings: FullSettings;
+  /** N-11: the history the Undo and Redo buttons follow. */
+  readonly store: WorkspaceStore;
 }
 
 const LAYOUT = titleBarLayout();
 
-export function TitleBar({ document: doc, actions, settings }: TitleBarProps) {
+export function TitleBar({ document: doc, actions, settings, store }: TitleBarProps) {
   const workspace = activeWorkspace(doc);
   return (
     <header
@@ -43,6 +47,7 @@ export function TitleBar({ document: doc, actions, settings }: TitleBarProps) {
         className="pointer-events-none mx-1 mr-2 size-5 shrink-0 select-none"
       />
       <WorkspaceMenu document={doc} actions={actions} settings={settings} />
+      <UndoButtons store={store} actions={actions} />
       <span aria-hidden className="mx-1.5 h-3.5 w-px shrink-0 bg-fill-strong" />
       {workspace !== undefined && <TabPills workspace={workspace} actions={actions} />}
       <div className="h-full min-w-4 flex-1" />

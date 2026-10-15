@@ -70,11 +70,13 @@ export const commands = {
 	stateLoad: () => typedError<LoadedState, WcmdError>(__TAURI_INVOKE("state_load")),
 	/**
 	 *  Every change the UI makes. Returns at once; the writer thread saves it. N-02: a terminal panel
-	 *  that left the document was closed, so its session ends (a page reload never ends one).
+	 *  that left the document was closed, so its session ends (a page reload never ends one); N-11
+	 *  unless `undoable` names it: the panels the UI's undo history can still bring back keep their
+	 *  sessions for the undo grace (`session/undo_grace.rs`).
 	 *  `seq` numbers the page's saves from 1: invokes may run in any order, and an older document
 	 *  must never land over a newer one (nor end the session of a panel the newer one added).
 	 */
-	stateSave: (seq: number, document: Document) => typedError<null, WcmdError>(__TAURI_INVOKE("state_save", { seq, document })),
+	stateSave: (seq: number, document: Document, undoable: string[]) => typedError<null, WcmdError>(__TAURI_INVOKE("state_save", { seq, document, undoable })),
 	settingsLoad: () => typedError<Settings, WcmdError>(__TAURI_INVOKE("settings_load")),
 	/**  Saves the whole settings (normalized) and returns what was saved. */
 	settingsSave: (settings: Settings) => typedError<Settings, WcmdError>(__TAURI_INVOKE("settings_save", { settings })),
@@ -124,6 +126,7 @@ export const commands = {
 export const events = {
 	agentActivity: makeEvent<AgentActivity>("agent-activity"),
 	captionButtonChanged: makeEvent<CaptionButtonChanged>("caption-button-changed"),
+	quitRequested: makeEvent<QuitRequested>("quit-requested"),
 	showPanel: makeEvent<ShowPanel>("show-panel"),
 	stateHealth: makeEvent<StateHealth>("state-health"),
 	windowHidden: makeEvent<WindowHidden>("window-hidden"),
@@ -484,6 +487,12 @@ export type PtyWriteArgs = {
 	agent?: string | null,
 };
 
+/**
+ *  N-11: the tray's Quit while an agent runs (and `window.confirm_close` is on): the window
+ *  shows and the page asks, as for Ctrl+Q, then quits through `app_quit` (`crate::tray`).
+ */
+export type QuitRequested = Record<string, never>;
+
 /**  Identifies a terminal session for its whole life. Never reused within a run. */
 export type SessionId = number;
 
@@ -597,6 +606,11 @@ export type WindowSettings = {
 	close_to_tray?: boolean,
 	/**  The one hint about the tray ("still running in the tray") was shown; never again. */
 	tray_hint_shown?: boolean,
+	/**
+	 *  N-11: closing a panel, tab or workspace with a running agent (or a running command in a
+	 *  shell with integration), and quitting with a running agent, asks first. Off: never asks.
+	 */
+	confirm_close?: boolean,
 };
 
 export type Workspace = {

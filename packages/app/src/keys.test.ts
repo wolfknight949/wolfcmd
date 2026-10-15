@@ -17,6 +17,8 @@ function host(focused: string | null) {
     toggleMaximize: vi.fn(),
     duplicateTab: vi.fn(),
     quit: vi.fn(),
+    undo: vi.fn(),
+    redo: vi.fn(),
   };
   const actions = { ...calls } as unknown as Actions;
   const keys: KeyHost = {
@@ -106,5 +108,17 @@ describe("N-01 Quit shortcut", () => {
     ).toBeUndefined();
     expect(shortcutFor(key({ key: "q", code: "KeyQ", altKey: true }), keys)).toBeUndefined();
     expect(shortcutFor(key({ key: "q", code: "KeyQ" }), keys)).toBeUndefined();
+  });
+});
+
+describe("N-11 undo keys", () => {
+  it("n11_undo_keys: Ctrl+Shift+Z undoes and Ctrl+Shift+Y redoes; Ctrl+Z and Ctrl+Y stay the terminal's", () => {
+    const { calls, keys } = host("p1");
+    shortcutFor(key({ key: "Z", code: "KeyZ", ctrlKey: true, shiftKey: true }), keys)?.();
+    expect(calls.undo).toHaveBeenCalledOnce();
+    shortcutFor(key({ key: "Y", code: "KeyY", ctrlKey: true, shiftKey: true }), keys)?.();
+    expect(calls.redo).toHaveBeenCalledOnce();
+    expect(shortcutFor(key({ key: "z", code: "KeyZ", ctrlKey: true }), keys)).toBeUndefined();
+    expect(shortcutFor(key({ key: "y", code: "KeyY", ctrlKey: true }), keys)).toBeUndefined();
   });
 });

@@ -392,9 +392,16 @@ export class RunningApp {
     await this.page.locator('header button[aria-label="Close"]').click();
   }
 
-  /** N-01: Ctrl+Q, the real quit (like the tray's Quit); waits for the process to end. */
+  /**
+   * N-01: Ctrl+Q, the real quit (like the tray's Quit); waits for the process to end. N-11:
+   * with an agent running WolfCmd asks first: the answer is Quit.
+   */
   async quit(): Promise<void> {
     await this.page.keyboard.press("Control+q");
+    const confirm = this.page
+      .getByRole("dialog", { name: "Quit WolfCmd?" })
+      .getByRole("button", { name: "Quit", exact: true });
+    await Promise.race([this.ended, confirm.click({ timeout: 15_000 }).catch(() => undefined)]);
     await this.exit("Ctrl+Q");
   }
 

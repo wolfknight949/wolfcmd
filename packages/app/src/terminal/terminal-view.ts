@@ -117,6 +117,9 @@ export interface TerminalEvents {
   /** N-06: a view attached to a session whose agent works now (later changes are events). */
   readonly onAgentWorking: () => void;
   readonly onExit: (code: number | null) => void;
+  /** N-11: the shell started (`true`) or finished (`false`) a command (OSC 133 C, then A/B/D);
+   * only when that changes. */
+  readonly onCommand: (running: boolean) => void;
   /** The program wants the user: OSC 9 / OSC 777, the bell, a command the user asked about. */
   readonly onAttention: (message: string) => void;
   /** OSC 9;4 progress; `undefined` clears it. Only when it changes. */
@@ -649,6 +652,9 @@ export function mountTerminal(
   const onPrompt = (data: string) => {
     const before = phase;
     phase = phaseAfter133(data, phase);
+    if (before !== phase && (phase === "running" || before === "running")) {
+      events.onCommand(phase === "running");
+    }
     // Marks only on the normal screen (a TUI's screen has no commands of its own).
     const track = onNormalScreen();
     const kind = data.charAt(0);

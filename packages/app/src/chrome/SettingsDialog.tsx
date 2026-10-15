@@ -347,6 +347,7 @@ export function SettingsDialog({
     remote: useId(),
     notify: useId(),
     tray: useId(),
+    confirm: useId(),
   };
 
   return (
@@ -483,6 +484,19 @@ export function SettingsDialog({
             checked={win.close_to_tray}
             onChange={(close_to_tray) => {
               settings.apply((s) => changed(s, "window", { close_to_tray }));
+            }}
+          />
+        </Row>
+        <Row
+          title="Ask before closing a running agent"
+          labelId={ids.confirm}
+          note="Also a running command in a shell; quitting asks only for agents"
+        >
+          <ToggleSwitch
+            aria-labelledby={ids.confirm}
+            checked={win.confirm_close}
+            onChange={(confirm_close) => {
+              settings.apply((s) => changed(s, "window", { confirm_close }));
             }}
           />
         </Row>

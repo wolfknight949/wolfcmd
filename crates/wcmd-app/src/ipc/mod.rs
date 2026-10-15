@@ -61,7 +61,8 @@ pub fn specta_builder() -> Builder<tauri::Wry> {
             state::StateHealth,
             agents::AgentActivity,
             agents::ShowPanel,
-            app::WindowHidden
+            app::WindowHidden,
+            app::QuitRequested
         ])
 }
 

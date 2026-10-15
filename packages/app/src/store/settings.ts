@@ -47,6 +47,7 @@ export function complete(settings: Settings): FullSettings {
     window: {
       close_to_tray: win.close_to_tray ?? true,
       tray_hint_shown: win.tray_hint_shown ?? false,
+      confirm_close: win.confirm_close ?? true,
     },
   };
 }
