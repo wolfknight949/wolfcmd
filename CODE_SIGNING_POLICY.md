@@ -4,7 +4,7 @@ Free code signing provided by [SignPath.io](https://about.signpath.io), certific
 
 ## What is signed
 
-Only the Windows installer of WolfCmd (`WolfCmd_<version>_x64-setup.exe`) and the files it installs, built from this repository's public source code.
+Only the Windows installer of WolfCmd (`WolfCmd_<version>_x64-setup.exe`), built from this repository's public source code.
 
 - Every signed binary is built by GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)) from a tagged commit of this repository. Nothing built on a personal machine is ever submitted for signing.
 - The signed installer is attached to the matching [GitHub release](https://github.com/wolfknight949/wolfcmd/releases) with its SHA-256 in `SHA256SUMS`.
